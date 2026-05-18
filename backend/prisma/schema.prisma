@@ -1,0 +1,106 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  projects      Project[]
+  refreshTokens RefreshToken[]
+  playSessions  PlaySession[]
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  ownerId     String
+  name        String
+  description String?
+  dslText     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner              User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  layouts            Layout[]
+  characterMetadata  CharacterMetadata[]
+  publishedSnapshots PublishedSnapshot[]
+
+  @@index([ownerId])
+}
+
+model Layout {
+  id        String   @id @default(uuid())
+  projectId String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model CharacterMetadata {
+  id            String  @id @default(uuid())
+  projectId     String
+  characterName String
+  avatarUrl     String?
+  data          Json?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, characterName])
+}
+
+model PublishedSnapshot {
+  id           String   @id @default(uuid())
+  projectId    String
+  version      Int
+  publicId     String   @unique
+  snapshotData Json
+  publishedAt  DateTime @default(now())
+
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  playSessions PlaySession[]
+
+  @@unique([projectId, version])
+  @@index([projectId])
+}
+
+model PlaySession {
+  id         String    @id @default(uuid())
+  snapshotId String
+  userId     String?
+  state      Json
+  startedAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  snapshot PublishedSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([snapshotId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+}

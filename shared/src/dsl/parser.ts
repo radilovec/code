@@ -12,7 +12,6 @@
 // Принцип из source.md: twine-parser демонстрирует pipeline «текст →
 // объект → граф». Здесь парсер — второй шаг этого pipeline: токены → AST.
 
-import type { Span, Position } from './ast.types.js';
 import type {
   Expression,
   LiteralStringExpr,
@@ -143,18 +142,6 @@ class Parser {
       column: tok.span.start.column,
       endLine: tok.span.end.line,
       endColumn: tok.span.end.column,
-    });
-  }
-
-  /** Добавить ошибку на позиции конкретного span. */
-  private addErrorAtSpan(message: string, span: Span): void {
-    this.errors.push({
-      severity: 'error',
-      message,
-      line: span.start.line,
-      column: span.start.column,
-      endLine: span.end.line,
-      endColumn: span.end.column,
     });
   }
 
@@ -552,7 +539,7 @@ class Parser {
     let left = this.parseAnd();
 
     while (this.check('OR')) {
-      const opTok = this.advance();
+      this.advance();
       const right = this.parseAnd();
       left = {
         kind: 'LogicalOp',
@@ -573,7 +560,7 @@ class Parser {
     let left = this.parseNot();
 
     while (this.check('AND')) {
-      const opTok = this.advance();
+      this.advance();
       const right = this.parseNot();
       left = {
         kind: 'LogicalOp',

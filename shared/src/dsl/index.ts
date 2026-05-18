@@ -4,3 +4,4 @@ export * from './token.types.js';
 export * from './lexer.js';
 export * from './parser.js';
 export * from './analyzer.js';
+export * from './reachability.js';

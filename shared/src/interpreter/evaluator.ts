@@ -84,6 +84,19 @@ export function evaluate(
 // applyBinaryOp: вспомогательная функция
 // ─────────────────────────────────────────────
 
+/** Проверяет, что оба операнда — числа. Бросает при несовпадении типов. */
+function expectNumbers(
+  op: string,
+  left: number | string | boolean,
+  right: number | string | boolean,
+): asserts left is number {
+  if (typeof left !== 'number' || typeof right !== 'number') {
+    throw new Error(
+      `Operator "${op}" requires numbers, got ${typeof left} and ${typeof right}`,
+    );
+  }
+}
+
 function applyBinaryOp(
   op: string,
   left: number | string | boolean,
@@ -95,31 +108,38 @@ function applyBinaryOp(
       if (typeof left === 'string' || typeof right === 'string') {
         return String(left) + String(right);
       }
+      expectNumbers(op, left, right);
       return (left as number) + (right as number);
     case '-':
+      expectNumbers(op, left, right);
       return (left as number) - (right as number);
     case '*':
+      expectNumbers(op, left, right);
       return (left as number) * (right as number);
     case '/': {
-      const divisor = right as number;
-      if (divisor === 0) {
+      expectNumbers(op, left, right);
+      if ((right as number) === 0) {
         throw new Error('Division by zero');
       }
-      return (left as number) / divisor;
+      return (left as number) / (right as number);
     }
 
-    // Сравнение
+    // Сравнение (== и != работают для любых типов)
     case '==':
       return left === right;
     case '!=':
       return left !== right;
     case '<':
+      expectNumbers(op, left, right);
       return (left as number) < (right as number);
     case '<=':
+      expectNumbers(op, left, right);
       return (left as number) <= (right as number);
     case '>':
+      expectNumbers(op, left, right);
       return (left as number) > (right as number);
     case '>=':
+      expectNumbers(op, left, right);
       return (left as number) >= (right as number);
 
     default:

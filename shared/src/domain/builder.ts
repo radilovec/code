@@ -16,12 +16,8 @@ import type {
   VarDecl,
   Statement,
   Expression,
+  Span,
   ChoiceStmt,
-  GoToStmt,
-  IfStmt,
-  TextStmt,
-  VideoStmt,
-  AssignStmt,
 } from '../dsl/ast.types.js';
 
 import type {
@@ -35,6 +31,8 @@ import type {
   Character,
   VideoSegment,
 } from './model.types.js';
+
+import { computeReachable } from '../dsl/reachability.js';
 
 // ─────────────────────────────────────────────
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -94,29 +92,74 @@ function extractInitialValue(expr: Expression): string | number | boolean {
 }
 
 // ─────────────────────────────────────────────
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ УСЛОВИЙ
+// ─────────────────────────────────────────────
+
+/** Синтетический Span для AST-узлов, созданных builder'ом (не из исходного кода). */
+const syntheticSpan: Span = {
+  start: { line: 0, column: 0, offset: 0 },
+  end: { line: 0, column: 0, offset: 0 },
+};
+
+/** Оборачивает выражение в UnaryOp 'not'. */
+function negateExpression(expr: Expression): Expression {
+  return { kind: 'UnaryOp', operator: 'not', operand: expr, span: syntheticSpan };
+}
+
+/**
+ * Комбинирует два условия через LogicalOp 'and'.
+ * Если одно из условий undefined — возвращает другое.
+ * Если оба undefined — возвращает undefined.
+ */
+function combineConditions(
+  outer: Expression | undefined,
+  inner: Expression | undefined,
+): Expression | undefined {
+  if (outer === undefined) return inner;
+  if (inner === undefined) return outer;
+  return {
+    kind: 'LogicalOp',
+    operator: 'and',
+    left: outer,
+    right: inner,
+    span: syntheticSpan,
+  };
+}
+
+// ─────────────────────────────────────────────
 // СБОРКА CHOICES ИЗ ТЕЛА СЦЕНЫ
 // ─────────────────────────────────────────────
 
 /**
  * Рекурсивно собирает все Choice из списка Statement'ов.
- * Обходит вложенные if/else — choices внутри условных блоков
- * тоже попадают в массив (условие if становится частью контекста,
- * но в доменной модели choice хранит только свой собственный when-condition).
+ * Обходит вложенные if/else — условие if-блока передаётся как
+ * `contextCondition` и комбинируется с when-условием choice через AND.
+ * Для else-ветки contextCondition = NOT(if.condition).
+ * Вложенные if/else формируют цепочку AND-условий.
  */
-function collectChoices(stmts: Statement[]): Choice[] {
+function collectChoices(
+  stmts: Statement[],
+  contextCondition?: Expression,
+): Choice[] {
   const choices: Choice[] = [];
 
   for (const stmt of stmts) {
     switch (stmt.kind) {
       case 'Choice':
-        choices.push(buildChoice(stmt));
+        choices.push(buildChoice(stmt, contextCondition));
         break;
-      case 'If':
-        choices.push(...collectChoices(stmt.thenBranch));
+      case 'If': {
+        const thenCtx = combineConditions(contextCondition, stmt.condition);
+        choices.push(...collectChoices(stmt.thenBranch, thenCtx));
         if (stmt.elseBranch !== undefined) {
-          choices.push(...collectChoices(stmt.elseBranch));
+          const elseCtx = combineConditions(
+            contextCondition,
+            negateExpression(stmt.condition),
+          );
+          choices.push(...collectChoices(stmt.elseBranch, elseCtx));
         }
         break;
+      }
       // Остальные statement'ы не содержат choices
     }
   }
@@ -124,17 +167,23 @@ function collectChoices(stmts: Statement[]): Choice[] {
   return choices;
 }
 
-/** Преобразует ChoiceStmt (AST) в Choice (доменная модель). */
-function buildChoice(stmt: ChoiceStmt): Choice {
+/**
+ * Преобразует ChoiceStmt (AST) в Choice (доменная модель).
+ * Если передан contextCondition (из объемлющего if-блока),
+ * он комбинируется с when-условием choice через AND.
+ */
+function buildChoice(stmt: ChoiceStmt, contextCondition?: Expression): Choice {
+  const effectiveCondition = combineConditions(contextCondition, stmt.condition);
+
   const choice: Choice = {
     label: stmt.label,
     targetSceneId: stmt.target,
   };
 
-  if (stmt.condition !== undefined) {
+  if (effectiveCondition !== undefined) {
     choice.condition = {
-      expression: stmt.condition,
-      displayText: expressionToDisplayText(stmt.condition),
+      expression: effectiveCondition,
+      displayText: expressionToDisplayText(effectiveCondition),
     };
   }
 
@@ -238,74 +287,6 @@ function collectCharacterMentions(stmts: Statement[]): Set<string> {
   }
 
   return mentions;
-}
-
-// ─────────────────────────────────────────────
-// АНАЛИЗ ДОСТИЖИМОСТИ (BFS)
-// ─────────────────────────────────────────────
-
-/**
- * Рекурсивно собирает все целевые сцены (из Choice и GoTo) из тела сцены.
- */
-function collectTargets(stmts: Statement[]): Set<string> {
-  const targets = new Set<string>();
-
-  for (const stmt of stmts) {
-    switch (stmt.kind) {
-      case 'Choice':
-        targets.add(stmt.target);
-        break;
-      case 'GoTo':
-        targets.add(stmt.target);
-        break;
-      case 'If':
-        for (const t of collectTargets(stmt.thenBranch)) {
-          targets.add(t);
-        }
-        if (stmt.elseBranch !== undefined) {
-          for (const t of collectTargets(stmt.elseBranch)) {
-            targets.add(t);
-          }
-        }
-        break;
-    }
-  }
-
-  return targets;
-}
-
-/**
- * Определяет множество сцен, достижимых из стартовой через BFS.
- */
-function computeReachable(
-  sceneDecls: SceneDecl[],
-  startSceneId: string,
-): Set<string> {
-  // Строим граф переходов: sceneName → Set<targetSceneName>
-  const graph = new Map<string, Set<string>>();
-  for (const scene of sceneDecls) {
-    graph.set(scene.name, collectTargets(scene.body));
-  }
-
-  // BFS от стартовой сцены
-  const reachable = new Set<string>();
-  const queue: string[] = [startSceneId];
-  reachable.add(startSceneId);
-
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    const targets = graph.get(current);
-    if (targets !== undefined) {
-      for (const target of targets) {
-        if (!reachable.has(target) && graph.has(target)) {
-          reachable.add(target);
-          queue.push(target);
-        }
-      }
-    }
-  }
-
-  return reachable;
 }
 
 // ─────────────────────────────────────────────

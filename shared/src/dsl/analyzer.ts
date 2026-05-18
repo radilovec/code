@@ -23,6 +23,7 @@ import type {
   Span,
 } from './ast.types.js';
 import type { Diagnostic, DiagnosticSeverity } from '../domain/model.types.js';
+import { computeReachable } from './reachability.js';
 
 // ─────────────────────────────────────────────
 // ВСПОМОГАТЕЛЬНЫЕ ТИПЫ
@@ -318,44 +319,14 @@ class Analyzer {
   private checkReachability(): void {
     if (this.sceneNames.size === 0) return;
 
-    // Собрать граф переходов: scene → set<target>
-    const targets = new Map<string, Set<string>>();
-    for (const name of this.sceneNames) {
-      targets.set(name, new Set<string>());
-    }
-
-    // Для каждой сцены — собрать все целевые переходы
     const sceneDecls = this.program.declarations.filter(
-      (d): d is SceneDecl => d.kind === 'Scene'
+      (d): d is SceneDecl => d.kind === 'Scene',
     );
 
-    for (const scene of sceneDecls) {
-      const sceneTargets = targets.get(scene.name);
-      if (sceneTargets !== undefined) {
-        this.collectTargets(scene.body, sceneTargets);
-      }
-    }
-
-    // BFS от первой сцены
     const firstScene = sceneDecls[0];
     if (firstScene === undefined) return;
 
-    const reachable = new Set<string>();
-    const queue: string[] = [firstScene.name];
-    reachable.add(firstScene.name);
-
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      const currentTargets = targets.get(current);
-      if (currentTargets !== undefined) {
-        for (const target of currentTargets) {
-          if (!reachable.has(target)) {
-            reachable.add(target);
-            queue.push(target);
-          }
-        }
-      }
-    }
+    const reachable = computeReachable(sceneDecls, firstScene.name);
 
     // Предупреждения для недостижимых сцен
     for (const scene of sceneDecls) {
@@ -364,27 +335,6 @@ class Analyzer {
           `Сцена "${scene.name}" недостижима — нет переходов из других сцен`,
           scene.span,
         );
-      }
-    }
-  }
-
-  /** Собрать все целевые сцены из списка инструкций (рекурсивно). */
-  private collectTargets(stmts: Statement[], result: Set<string>): void {
-    for (const stmt of stmts) {
-      switch (stmt.kind) {
-        case 'Choice':
-          result.add(stmt.target);
-          break;
-        case 'GoTo':
-          result.add(stmt.target);
-          break;
-        case 'If':
-          this.collectTargets(stmt.thenBranch, result);
-          if (stmt.elseBranch !== undefined) {
-            this.collectTargets(stmt.elseBranch, result);
-          }
-          break;
-        // Другие инструкции не содержат переходов
       }
     }
   }
