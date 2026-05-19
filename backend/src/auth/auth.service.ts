@@ -36,7 +36,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('Registration failed');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);

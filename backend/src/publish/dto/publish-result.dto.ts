@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsPositive, IsInt } from 'class-validator';
+import { IsString, IsNumber, IsInt, Min } from 'class-validator';
 
 /**
  * Ответ на запрос публикации.
@@ -7,7 +7,7 @@ import { IsString, IsNumber, IsPositive, IsInt } from 'class-validator';
 export class PublishResultDto {
   /** Номер версии опубликованного снапшота (инкрементируется при каждой публикации). */
   @IsInt()
-  @IsPositive()
+  @Min(1)
   version!: number;
 
   /** Публичный UUID для доступа к снапшоту. Используется в URL `/play/:publicId`. */
@@ -16,10 +16,11 @@ export class PublishResultDto {
 
   /** Количество достижимых сцен в снапшоте. */
   @IsInt()
-  @IsPositive()
+  @Min(0)
   sceneCount!: number;
 
   /** Суммарное количество вариантов выбора во всех сценах. */
   @IsNumber()
+  @Min(0)
   choiceCount!: number;
 }

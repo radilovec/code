@@ -13,5 +13,6 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1_000_000)
   dslText?: string;
 }

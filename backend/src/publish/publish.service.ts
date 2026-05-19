@@ -57,6 +57,7 @@ export class PublishService {
     }
 
     // 2. Динамический импорт shared-пакета (ESM из CommonJS NestJS)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { tokenize, parse, buildScenario, buildSnapshot } = await import(
       '@interactive-video/shared'
     );
@@ -101,13 +102,14 @@ export class PublishService {
     );
 
     // 7. Считаем статистику для ответа
-    const scenes = Object.values(
-      snapshot.scenes as Record<string, { choices: unknown[] }>,
-    );
+    const snapshotScenes = snapshot.scenes as Record<
+      string,
+      { choices: { label: string; target: string }[] }
+    >;
+    const scenes = Object.values(snapshotScenes);
     const sceneCount = scenes.length;
     const choiceCount = scenes.reduce(
-      (sum: number, scene: { choices: unknown[] }) =>
-        sum + scene.choices.length,
+      (sum, scene) => sum + scene.choices.length,
       0,
     );
 

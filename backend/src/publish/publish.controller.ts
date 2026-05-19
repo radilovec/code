@@ -5,6 +5,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { JwtAccessGuard } from '../auth/guards/jwt-access.guard';
 import {
@@ -31,7 +32,7 @@ export class PublishController {
   @Post(':projectId')
   @HttpCode(HttpStatus.CREATED)
   async publish(
-    @Param('projectId') projectId: string,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<PublishResultDto> {
     return this.publishService.publishProject(projectId, user.userId);

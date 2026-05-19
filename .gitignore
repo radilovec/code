@@ -33,6 +33,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+Icon?
 
 # IDE
 .idea/

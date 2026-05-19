@@ -103,4 +103,5 @@ model RefreshToken {
 
   @@index([tokenHash])
   @@index([userId])
+  @@index([expiresAt])
 }
