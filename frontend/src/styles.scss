@@ -5,8 +5,8 @@ html {
   @include mat.theme((
     color: (
       theme-type: dark,
-      primary: mat.$indigo-palette,
-      tertiary: mat.$blue-palette,
+      primary: mat.$violet-palette,
+      tertiary: mat.$cyan-palette,
     ),
     typography: Roboto,
     density: 0,

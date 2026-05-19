@@ -13,6 +13,9 @@ COPY backend/ ./backend/
 # Устанавливаем зависимости только для нужных workspace-пакетов
 RUN npm install --workspace=shared --workspace=backend
 
+# Генерируем Prisma Client
+RUN cd backend && npx prisma generate
+
 # Собираем shared, затем backend
 RUN npm run build --workspace=shared
 RUN npm run build --workspace=backend
@@ -40,10 +43,10 @@ COPY --from=builder /app/backend/dist ./backend/dist
 # Устанавливаем только production-зависимости
 RUN npm install --workspace=shared --workspace=backend --omit=dev
 
-# NOTE: Prisma generate добавляется в T3.1 после создания schema.prisma:
-# COPY --from=builder /app/backend/prisma ./backend/prisma
-# RUN cd backend && npx prisma generate
+# Prisma schema + generate для runtime
+COPY --from=builder /app/backend/prisma ./backend/prisma
+RUN cd backend && npx prisma generate
 
 EXPOSE 3000
 
-CMD ["node", "backend/dist/main.js"]
+CMD ["node", "backend/dist/src/main.js"]
