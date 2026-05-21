@@ -1,0 +1,266 @@
+<div class="editor-layout">
+
+  <!-- ───── TOPBAR ───── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="back-btn" routerLink="/projects" aria-label="Назад к проектам">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.2 6 3 11l-.9-2.4c-.3-.8.1-1.7.9-2L18.1 1.6c.8-.3 1.7.1 2 .9z"/>
+          <path d="m6.2 5.3 3.1 3.9"/>
+          <path d="m12.4 3.4 3.1 4"/>
+          <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+      </div>
+
+      <div class="project-name-wrap">
+        @if (loading()) {
+          <span class="project-name project-name--loading">Загрузка…</span>
+        } @else {
+          <span class="project-name">{{ project()?.name }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- ───── TABS ───── -->
+    <nav class="tabs" role="tablist" aria-label="Представление">
+      <button class="tab"
+              [class.active]="activeTab() === 'dsl'"
+              role="tab"
+              [attr.aria-selected]="activeTab() === 'dsl'"
+              title="Текстовый редактор сценария"
+              (click)="setTab('dsl')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+        DSL
+        <span class="kbd">&#8984;1</span>
+      </button>
+      <button class="tab"
+              [class.active]="activeTab() === 'graph'"
+              role="tab"
+              [attr.aria-selected]="activeTab() === 'graph'"
+              title="Граф сцен"
+              (click)="setTab('graph')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="3"/>
+          <circle cx="18" cy="18" r="3"/>
+          <path d="M9 6h6a3 3 0 0 1 3 3v6"/>
+        </svg>
+        Граф
+        <span class="kbd">&#8984;2</span>
+      </button>
+      <button class="tab"
+              [class.active]="activeTab() === 'split'"
+              role="tab"
+              [attr.aria-selected]="activeTab() === 'split'"
+              title="Split view: DSL и Граф"
+              (click)="setTab('split')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="12" y1="3" x2="12" y2="21"/>
+        </svg>
+        Split
+        <span class="kbd">&#8984;3</span>
+      </button>
+    </nav>
+
+    <div class="topbar-right">
+      @if (store.errors().length > 0) {
+        <span class="error-indicator">
+          {{ store.errors().length }} {{ store.errors().length === 1 ? 'ошибка' : 'ошибок' }}
+        </span>
+      }
+      @if (store.warnings().length > 0) {
+        <span class="warning-indicator">
+          {{ store.warnings().length }} {{ store.warnings().length === 1 ? 'предупреждение' : 'предупреждений' }}
+        </span>
+      }
+      @if (saving()) {
+        <span class="save-indicator">Сохранение…</span>
+      }
+      <button
+        class="btn-publish"
+        type="button"
+        (click)="publish()"
+        [disabled]="loading()"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Опубликовать
+      </button>
+    </div>
+  </header>
+
+  <!-- ───── WORKSPACE ───── -->
+  <div class="workspace">
+
+    <!-- ───── SIDE PANEL ───── -->
+    <aside class="side-panel">
+
+      <!-- Сцены -->
+      <div class="section">
+        <button class="section-header" type="button" (click)="toggleScenes()">
+          <svg class="chevron" [class.open]="scenesOpen()"
+               width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="section-title">Сцены</span>
+          <span class="section-count">{{ store.scenes().length }}</span>
+        </button>
+        @if (scenesOpen()) {
+          <div class="section-body">
+            @if (store.scenes().length === 0) {
+              <div class="empty-section">
+                <span>Нет сцен</span>
+              </div>
+            } @else {
+              @for (scene of store.scenes(); track scene.id) {
+                <button
+                  class="section-item"
+                  [class.active]="store.selectedSceneId() === scene.id"
+                  [class.unreachable]="scene.unreachable"
+                  type="button"
+                  (click)="goToScene(scene.id)"
+                >
+                  <span class="item-icon">
+                    @if (scene.type === 'ending') {
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                    } @else {
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                      </svg>
+                    }
+                  </span>
+                  <span class="item-label">{{ scene.name }}</span>
+                  @if (scene.unreachable) {
+                    <span class="item-badge warning" title="Недостижимая сцена">!</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Переменные -->
+      <div class="section">
+        <button class="section-header" type="button" (click)="toggleVariables()">
+          <svg class="chevron" [class.open]="variablesOpen()"
+               width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="section-title">Переменные</span>
+          <span class="section-count">{{ store.variables().length }}</span>
+        </button>
+        @if (variablesOpen()) {
+          <div class="section-body">
+            @if (store.variables().length === 0) {
+              <div class="empty-section">
+                <span>Нет переменных</span>
+              </div>
+            } @else {
+              @for (variable of store.variables(); track variable.name) {
+                <div class="section-item variable-item">
+                  <span class="item-label">{{ variable.name }}</span>
+                  <span class="item-type">{{ variable.type }}</span>
+                  <span class="item-value">{{ variable.initialValue }}</span>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Персонажи -->
+      <div class="section">
+        <button class="section-header" type="button" (click)="toggleCharacters()">
+          <svg class="chevron" [class.open]="charactersOpen()"
+               width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="section-title">Персонажи</span>
+          <span class="section-count">{{ store.characters().length }}</span>
+        </button>
+        @if (charactersOpen()) {
+          <div class="section-body">
+            @if (store.characters().length === 0) {
+              <div class="empty-section">
+                <span>Нет персонажей</span>
+              </div>
+            } @else {
+              @for (char of store.characters(); track char.name) {
+                <div class="section-item character-item">
+                  <span class="item-label">{{ char.name }}</span>
+                  @if (char.description) {
+                    <span class="item-desc">{{ char.description }}</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+
+    </aside>
+
+    <!-- ───── MAIN AREA ───── -->
+    <main class="main-area" [class.split-mode]="activeTab() === 'split'">
+      @if (!loading() && project()) {
+
+        <!-- DSL tab -->
+        @if (activeTab() === 'dsl' || activeTab() === 'split') {
+          <div class="pane dsl-pane">
+            <app-monaco-host
+              #monacoHost
+              [initialValue]="project()!.dslText"
+              (contentChange)="onDslChange($event)"
+              (save)="onSaveDsl($event)"
+            />
+          </div>
+        }
+
+        <!-- Splitter (only in split mode) -->
+        @if (activeTab() === 'split') {
+          <div class="splitter" aria-label="Разделитель панелей"></div>
+        }
+
+        <!-- Graph tab -->
+        @if (activeTab() === 'graph' || activeTab() === 'split') {
+          <div class="pane graph-pane">
+            <app-graph-view
+              [model]="store.parsedModel()"
+              [selectedSceneId]="store.selectedSceneId()"
+              (sceneSelected)="onGraphSceneSelected($event)"
+            />
+          </div>
+        }
+      }
+    </main>
+
+  </div>
+</div>

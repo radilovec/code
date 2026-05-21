@@ -1,0 +1,22 @@
+<div class="graph-container">
+  <f-flow>
+    <f-canvas fZoom [fZoomMinimum]="0.2" [fZoomMaximum]="2">
+      <f-background>
+        <f-circle-pattern [radius]="1" color="rgba(255,255,255,0.045)"></f-circle-pattern>
+      </f-background>
+
+      <!-- T5.2 — nodes and edges will be rendered here -->
+    </f-canvas>
+  </f-flow>
+
+  <!-- Derived hint banner -->
+  <div class="derived-hint">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+    <span>Автоматически построено из DSL. Структура меняется только в DSL-редакторе.</span>
+  </div>
+</div>

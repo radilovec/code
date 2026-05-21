@@ -1,0 +1,329 @@
+.dialog {
+  width: 600px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 40px 80px -20px rgba(0, 0, 0, 0.7),
+    inset 0 2px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+// ── Header ──
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: -6px -6px 0 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border);
+  }
+}
+
+// ── Body ──
+.dialog-body {
+  padding: 20px 24px 4px;
+}
+
+.field {
+  margin-bottom: 18px;
+
+  label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+}
+
+.input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--text-dim);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+  }
+
+  &.is-error {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  }
+}
+
+textarea.input {
+  height: auto;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 72px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.field-error {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--error);
+}
+
+// ── Template radio-cards ──
+.templates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tpl {
+  position: relative;
+  padding: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  outline: none;
+
+  &:hover {
+    border-color: #3a3f4c;
+  }
+
+  &.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+.tpl-radio {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+
+  .tpl.active & {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: inset 0 0 0 3px var(--bg);
+  }
+}
+
+.tpl-ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+
+  .tpl.active & {
+    color: var(--primary);
+  }
+}
+
+.tpl-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--text);
+}
+
+.tpl-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+// ── Checkbox ──
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+.box {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  margin-top: 1px;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg {
+    color: #fff;
+    width: 12px;
+    height: 12px;
+  }
+
+  .checkbox.checked & {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
+// ── Footer ──
+.dialog-foot {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.015);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.foot-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.kbd {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: var(--bg);
+  margin-left: 4px;
+}
+
+.foot-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ── Buttons ──
+.btn {
+  height: 36px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+
+  .kbd {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.06);
+    margin-left: 0;
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+
+  &:hover {
+    background: var(--bg);
+  }
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 20px -10px var(--primary-glow);
+
+  &:hover {
+    background: var(--primary-600);
+  }
+}

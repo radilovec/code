@@ -1,0 +1,244 @@
+<div class="page-wrapper" (click)="closeMenu()">
+
+  <!-- ───── TOPBAR ───── -->
+  <header class="topbar">
+    <a class="brand" routerLink="/projects">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.2 6 3 11l-.9-2.4c-.3-.8.1-1.7.9-2L18.1 1.6c.8-.3 1.7.1 2 .9z"/>
+          <path d="m6.2 5.3 3.1 3.9"/>
+          <path d="m12.4 3.4 3.1 4"/>
+          <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+      </div>
+      <span class="brand-name">Story Editor</span>
+    </a>
+
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input placeholder="Поиск проектов…" aria-label="Поиск проектов">
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <div class="topbar-right">
+      <div class="avatar" aria-label="Профиль пользователя">{{ userInitials() }}</div>
+      <button class="topbar-logout" (click)="auth.logout()" type="button">Выйти</button>
+    </div>
+  </header>
+
+  <!-- ───── BODY ───── -->
+  <main class="body">
+
+    <div class="page-head">
+      <div>
+        <div class="crumbs">
+          <span>Studio</span>
+          <span>/</span>
+          <span>Проекты</span>
+        </div>
+        <h1>Мои проекты <span class="count">{{ allProjects().length }}</span></h1>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-primary" type="button" (click)="openNewProjectDialog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Новый проект
+          <span class="kbd">N</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter chips + toolbar -->
+    <div class="toolbar">
+      <div class="chips">
+        <button
+          class="chip"
+          [class.active]="activeFilter() === 'all'"
+          type="button"
+          (click)="setFilter('all')"
+        >
+          Все <span class="num">{{ allProjects().length }}</span>
+        </button>
+        <button
+          class="chip"
+          [class.active]="activeFilter() === 'draft'"
+          type="button"
+          (click)="setFilter('draft')"
+        >
+          Черновики <span class="num">{{ draftCount() }}</span>
+        </button>
+        <button
+          class="chip"
+          [class.active]="activeFilter() === 'published'"
+          type="button"
+          (click)="setFilter('published')"
+        >
+          Опубликованные <span class="num">{{ publishedCount() }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    @if (loading()) {
+      <div class="loading-state">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (!loading() && filteredProjects().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.2 6 3 11l-.9-2.4c-.3-.8.1-1.7.9-2L18.1 1.6c.8-.3 1.7.1 2 .9z"/>
+            <path d="m6.2 5.3 3.1 3.9"/>
+            <path d="m12.4 3.4 3.1 4"/>
+            <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          </svg>
+        </div>
+        @if (activeFilter() === 'all') {
+          <p class="empty-title">Пока нет проектов</p>
+          <p class="empty-sub">Создайте первый интерактивный сценарий</p>
+          <button class="btn btn-primary" type="button" (click)="openNewProjectDialog()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Новый проект
+          </button>
+        } @else {
+          <p class="empty-title">Нет проектов в этой категории</p>
+          <button class="btn btn-ghost" type="button" (click)="setFilter('all')">Показать все</button>
+        }
+      </div>
+    }
+
+    <!-- Cards grid -->
+    @if (!loading() && filteredProjects().length > 0) {
+      <div class="grid">
+        @for (project of filteredProjects(); track project.id) {
+          <article
+            class="card"
+            (click)="openProject(project)"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="openProject(project)"
+            [attr.aria-label]="'Открыть проект ' + project.name"
+          >
+            <!-- Thumbnail -->
+            <div class="thumb">
+              <div class="thumb-stripes"></div>
+              <!-- Mini graph placeholder SVG -->
+              <svg class="thumb-graph" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                <g class="node-line">
+                  <line x1="80" y1="135" x2="200" y2="80"/>
+                  <line x1="80" y1="135" x2="200" y2="190"/>
+                  <line x1="200" y1="80" x2="340" y2="135"/>
+                  <line x1="200" y1="190" x2="340" y2="135"/>
+                </g>
+                <g>
+                  <rect x="60"  y="121" width="40" height="28" rx="4" fill="#3b82f6" opacity=".5"/>
+                  <rect x="180" y="66"  width="40" height="28" rx="4" fill="#f59e0b" opacity=".5"/>
+                  <rect x="180" y="156" width="40" height="28" rx="4" fill="#f59e0b" opacity=".5"/>
+                  <rect x="320" y="121" width="40" height="28" rx="4" fill="#10b981" opacity=".7"/>
+                </g>
+              </svg>
+              <div
+                class="thumb-status"
+                [class.draft]="!isPublished(project)"
+                [class.pub]="isPublished(project)"
+              >
+                {{ isPublished(project) ? 'Опубликован' : 'Черновик' }}
+              </div>
+            </div>
+
+            <!-- Card body -->
+            <div class="card-body">
+              <div class="card-head">
+                <div class="card-info">
+                  <div class="card-title">{{ project.name }}</div>
+                  @if (project.description) {
+                    <div class="card-sub">{{ project.description }}</div>
+                  } @else {
+                    <div class="card-sub card-sub--empty">Описание не задано</div>
+                  }
+                </div>
+                <button
+                  class="menu-btn"
+                  [class.open]="openMenuId() === project.id"
+                  type="button"
+                  aria-haspopup="true"
+                  [attr.aria-expanded]="openMenuId() === project.id"
+                  (click)="toggleMenu(project.id, $event)"
+                  aria-label="Меню проекта"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="12" cy="5" r="1"/>
+                    <circle cx="12" cy="19" r="1"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="card-foot">
+                <span>изменён {{ relativeTime(project.updatedAt) }}</span>
+              </div>
+            </div>
+
+            <!-- Dropdown menu -->
+            @if (openMenuId() === project.id) {
+              <div class="menu" role="menu">
+                <div
+                  class="menu-item"
+                  role="menuitem"
+                  tabindex="0"
+                  (click)="openProject(project)"
+                  (keydown.enter)="openProject(project)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Открыть
+                  <span class="menu-right">Enter</span>
+                </div>
+                <div class="menu-sep"></div>
+                <div
+                  class="menu-item danger"
+                  role="menuitem"
+                  tabindex="0"
+                  (click)="deleteProject(project, $event)"
+                  (keydown.enter)="deleteProject(project, $any($event))"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                  Удалить
+                  <span class="menu-right">⌫</span>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+
+  </main>
+</div>

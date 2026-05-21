@@ -127,6 +127,8 @@ export interface Scene {
   id: string;
   /** Отображаемое имя (совпадает с id в MVP). */
   name: string;
+  /** Строка объявления сцены в DSL (1-based). Для навигации из side-panel в Monaco. */
+  line: number;
   /** Тип сцены (заполняется анализатором T2.5). */
   type: SceneType;
   /** Видео-сегмент (опционально — сцена может быть без видео). */

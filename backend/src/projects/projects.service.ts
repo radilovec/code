@@ -36,6 +36,7 @@ export class ProjectsService {
         description: true,
         createdAt: true,
         updatedAt: true,
+        _count: { select: { publishedSnapshots: true } },
       },
     });
   }

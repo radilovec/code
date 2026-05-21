@@ -1,0 +1,131 @@
+@use 'styles/mixins' as m;
+
+.auth-page {
+  @include m.auth-center;
+  position: relative;
+}
+
+.center {
+  width: 420px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 40px;
+  user-select: none;
+}
+
+.logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #4f52d6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 6px 24px -8px var(--primary-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #fff;
+  }
+}
+
+.logo-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card {
+  @include m.card;
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    margin: 0 0 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+}
+
+.field {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input {
+  @include m.input;
+}
+
+.err {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--r-sm);
+  color: #fecaca;
+  font-size: 13px;
+  line-height: 1.4;
+
+  svg {
+    color: var(--error);
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    margin-top: 1px;
+  }
+}
+
+.btn {
+  @include m.btn-primary;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.kbd {
+  @include m.kbd;
+}
+
+.foot {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+
+  a {
+    color: var(--text);
+    font-weight: 500;
+
+    &:hover {
+      color: var(--primary);
+    }
+  }
+}

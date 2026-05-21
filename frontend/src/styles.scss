@@ -1,6 +1,8 @@
 @use '@angular/material' as mat;
+@use 'styles/variables';
+@use 'styles/base';
 
-// Подключаем тёмную тему Material
+// Angular Material theme — used only for toolbar, dialog, snackbar, menu, spinner
 html {
   @include mat.theme((
     color: (
@@ -13,14 +15,16 @@ html {
   ));
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
+// Dialog overlay
+.sf-dialog-backdrop {
+  background: rgba(7, 9, 13, 0.68);
+  backdrop-filter: blur(6px);
 }
 
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #121212;
-  color: rgba(255, 255, 255, 0.87);
+.sf-dialog-panel .mat-mdc-dialog-surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
 }

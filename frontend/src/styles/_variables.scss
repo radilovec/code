@@ -1,0 +1,50 @@
+// ============================================================
+// Design tokens — из materials/design/
+// ============================================================
+
+:root {
+  // ── Surfaces ──
+  --bg:          #0f1115;
+  --surface:     #1a1d24;
+  --elevated:    #242832;
+  --border:      #2d313b;
+
+  // ── Text ──
+  --text:        #e8eaed;
+  --text-muted:  #9aa0a6;
+  --text-dim:    #6b7280;
+
+  // ── Accents ──
+  --primary:     #6366f1;
+  --primary-600: #4f52d6;
+  --primary-glow: rgba(99, 102, 241, 0.18);
+  --success:     #10b981;
+  --warning:     #f59e0b;
+  --error:       #ef4444;
+  --info:        #3b82f6;
+
+  // ── Node colors (graph) ──
+  --node-scene:  #3b82f6;
+  --node-choice: #f59e0b;
+  --node-cond:   #a855f7;
+  --node-end:    #10b981;
+  --node-video:  #ec4899;
+
+  // ── Radii ──
+  --r-sm:  4px;
+  --r-md:  8px;
+  --r-lg:  12px;
+
+  // ── DSL syntax highlighting ──
+  --syn-kw:   #c586c0;
+  --syn-str:  #ce9178;
+  --syn-ref:  #dcdcaa;
+  --syn-var:  #9cdcfe;
+  --syn-num:  #b5cea8;
+  --syn-comm: #6a9955;
+  --syn-op:   #c8c8c8;
+
+  // ── Typography ──
+  --f-sans: 'Inter', 'SF Pro Text', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Menlo', monospace;
+}

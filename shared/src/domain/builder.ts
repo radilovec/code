@@ -399,6 +399,7 @@ export function buildScenario(program: ProgramNode): Scenario {
     const scene: Scene = {
       id: decl.name,
       name: decl.name,
+      line: decl.span.start.line,
       type: sceneType,
       texts,
       choices,

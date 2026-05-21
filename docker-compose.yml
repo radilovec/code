@@ -21,31 +21,39 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/Dockerfile.dev
     container_name: interactive_video_backend
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-ivs_user}:${POSTGRES_PASSWORD:-ivs_password}@postgres:5432/${POSTGRES_DB:-ivs_db}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-jwt-secret-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: development
       PORT: 3000
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
     ports:
       - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./backend/src:/app/backend/src
+      - ./shared/src:/app/shared/src
 
   frontend:
     build:
       context: .
-      dockerfile: frontend/Dockerfile
+      dockerfile: frontend/Dockerfile.dev
     container_name: interactive_video_frontend
     restart: unless-stopped
     ports:
-      - "4200:80"
+      - "4200:4200"
     depends_on:
       - backend
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./shared/src:/app/shared/src
 
 volumes:
   postgres_data:

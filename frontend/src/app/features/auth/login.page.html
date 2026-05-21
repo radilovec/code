@@ -1,0 +1,74 @@
+<div class="auth-page dot-grid">
+  <main class="center">
+    <div class="logo">
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.2 6 3 11l-.9-2.4c-.3-.8.1-1.7.9-2L18.1 1.6c.8-.3 1.7.1 2 .9z"/>
+          <path d="m6.2 5.3 3.1 3.9"/>
+          <path d="m12.4 3.4 3.1 4"/>
+          <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+      </div>
+      <div class="logo-title">StoryForge</div>
+    </div>
+
+    <section class="card">
+      <h1>Войти в аккаунт</h1>
+      <p class="sub">Используйте email и пароль для входа.</p>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="field">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <input
+              id="email"
+              type="email"
+              class="input"
+              [class.is-error]="form.controls.email.touched && form.controls.email.invalid"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pwd">Пароль</label>
+          <div class="input-wrap">
+            <input
+              id="pwd"
+              type="password"
+              class="input"
+              formControlName="password"
+              autocomplete="current-password"
+            />
+          </div>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="err" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-full" [disabled]="loading()">
+          @if (loading()) {
+            Вход...
+          } @else {
+            Войти
+            <span class="kbd">↵</span>
+          }
+        </button>
+      </form>
+    </section>
+
+    <p class="foot">Ещё нет аккаунта? <a routerLink="/register">Создать аккаунт</a></p>
+  </main>
+</div>
