@@ -184,7 +184,7 @@ export interface Scenario {
 // раскладка пользователя из Layout-сущности в БД.
 
 /** Визуальный тип узла графа — определяет форму и цвет в Foblex Flow (T5.4). */
-export type GraphNodeType = 'scene' | 'choice' | 'ending';
+export type GraphNodeType = 'scene' | 'choice' | 'condition' | 'ending';
 
 /** Узел графа — соответствует одной сцене в Scenario. */
 export interface GraphNode {

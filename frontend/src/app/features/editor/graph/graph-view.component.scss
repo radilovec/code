@@ -1,45 +1,464 @@
+// Graph view — styles matching materials/design/05-graph.html
+
+// The host is a flex item of .pane (display:flex). To propagate height
+// correctly through the chain, every level must be flex + min-height:0.
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
+  overflow: hidden;
   position: relative;
 }
 
 .graph-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
-  position: relative;
   overflow: hidden;
+  position: relative;
   background: var(--bg);
+
+  // Override Foblex Flow light-theme defaults for dark UI
+  --ff-canvas-background-color: var(--bg);
+  --ff-flow-background-color: var(--bg);
+  --ff-node-background-color: var(--surface);
+  --ff-color-text-primary: var(--text);
+  --ff-background-dot-color: rgba(255, 255, 255, 0.045);
 }
 
 f-flow {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
 }
 
-// Derived hint banner (top-left overlay)
+// ─── Common node base ───
+
+.node {
+  position: absolute;
+  user-select: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// ─── Connectors (handles) ───
+
+.n-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--text-dim);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+
+  &.l {
+    left: 0;
+  }
+
+  &.r {
+    left: 100%;
+  }
+}
+
+// ─── Scene node (188×88) ───
+
+.n-scene {
+  width: 188px;
+  height: 88px;
+  padding: 8px 10px;
+  border-top: 3px solid var(--node-scene);
+  border-radius: 8px;
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    height: 100%;
+  }
+
+  .thumb {
+    width: 48px;
+    height: 36px;
+    border-radius: 4px;
+    flex: 0 0 48px;
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 5px,
+      rgba(255, 255, 255, 0.02) 5px 10px
+    );
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.35);
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sub {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 2px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .text-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .meta {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  // Selected state
+  &.selected {
+    border-color: var(--primary);
+    border-top-color: var(--node-scene);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35),
+                0 12px 30px -14px rgba(99, 102, 241, 0.5);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 12px;
+      pointer-events: none;
+      border: 1px dashed rgba(99, 102, 241, 0.35);
+    }
+  }
+}
+
+// ─── Choice node (yellow diamond, 120×120) ───
+// Visual trick: the outer .node is a transparent 120×120 box.
+// The .diamond-bg inner div is rotated 45° to create the diamond visual.
+// This keeps the Foblex layout box rectangular while the visual is a diamond.
+// Handles stay at standard left/right midpoints (= diamond left/right vertices). ✓
+
+.n-choice {
+  width: 120px;
+  height: 120px;
+  background: transparent;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .diamond-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(245, 158, 11, 0.07);
+    border: 1.5px solid var(--node-choice);
+    border-radius: 10px;
+    transform: rotate(45deg);
+    pointer-events: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .n-choice-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 80px;
+  }
+
+  .ico {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.18);
+    color: var(--node-choice);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.15;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sub {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  &.selected .diamond-bg {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  }
+
+  &.unreach .diamond-bg {
+    border-color: var(--border);
+  }
+}
+
+// ─── Condition node (purple hex, 170×64) ───
+// Uses clip-path polygon for hexagonal shape.
+// The .hex-bg div carries the clip-path + fill; .n-cond-inner holds content.
+
+.n-cond {
+  width: 170px;
+  height: 64px;
+  background: transparent;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .hex-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1.5px solid var(--node-cond);
+    clip-path: polygon(14% 0%, 86% 0%, 100% 50%, 86% 100%, 14% 100%, 0% 50%);
+    pointer-events: none;
+    transition: border-color 0.15s;
+  }
+
+  .n-cond-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 28px; // keep content within visible hex area
+  }
+
+  .label {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 110px;
+  }
+
+  .sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: var(--f-mono);
+  }
+
+  &.selected .hex-bg {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+  }
+
+  &.unreach .hex-bg {
+    border-color: var(--border);
+  }
+}
+
+// ─── Ending node (pill, 170×60) ───
+
+.n-end {
+  width: 170px;
+  height: 60px;
+  padding: 0 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1.5px solid var(--node-end);
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .ico {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex: 0 0 28px;
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--node-end);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--f-mono);
+    text-transform: uppercase;
+  }
+
+  &.selected {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35),
+                0 12px 30px -14px rgba(16, 185, 129, 0.5);
+  }
+}
+
+// ─── Unreachable state ───
+
+.node.unreach {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+
+  // Italic labels signal degraded/inaccessible state (T5.5)
+  .name,
+  .label {
+    font-style: italic;
+  }
+
+  // For scene and ending nodes (which have a real CSS border)
+  &.n-scene,
+  &.n-end {
+    border-color: var(--border) !important;
+    border-top-color: var(--border) !important;
+  }
+
+  // For choice and condition nodes, unreach overrides are handled
+  // inside their respective rules via &.unreach .diamond-bg / .hex-bg selectors.
+}
+
+.warn-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--warning);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px var(--bg);
+  z-index: 2;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+// ─── Connections ───
+
+::ng-deep {
+  .f-connection {
+    .f-connection-selection {
+      stroke: transparent;
+      stroke-width: 8;
+    }
+
+    .f-connection-path {
+      stroke: var(--text-dim);
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#edge-arrow);
+    }
+  }
+
+  // Conditional transitions: dashed line (matches design)
+  .f-connection.conditional {
+    .f-connection-path {
+      stroke-dasharray: 4 3;
+    }
+  }
+}
+
+// ─── Derived hint banner ───
+
 .derived-hint {
   position: absolute;
   top: 12px;
   left: 12px;
-  right: 12px;
   z-index: 5;
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  height: 32px;
+  padding: 0 12px;
   background: rgba(99, 102, 241, 0.08);
   border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 6px;
-  color: rgba(232, 234, 237, 0.9);
+  color: rgba(232, 234, 237, 0.85);
   font-size: 12px;
-  line-height: 1.4;
   pointer-events: none;
+  max-width: 520px;
 
   svg {
+    width: 14px;
+    height: 14px;
     color: var(--primary);
-    flex: 0 0 13px;
-    margin-top: 1px;
+    flex: 0 0 14px;
   }
 }

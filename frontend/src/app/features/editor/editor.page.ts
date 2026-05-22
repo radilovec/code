@@ -10,11 +10,12 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { switchMap, tap } from 'rxjs';
+import { Subject, EMPTY, switchMap, tap, debounceTime } from 'rxjs';
 import { EditorApiService, ProjectDetail } from './editor.api';
 import { MonacoHostComponent } from './dsl/monaco-host.component';
 import { GraphViewComponent } from './graph/graph-view.component';
 import { EditorStore } from './editor.store';
+import type { LayoutData } from './graph/dagre-layout';
 
 export type EditorTab = 'dsl' | 'graph' | 'split';
 
@@ -40,10 +41,14 @@ export class EditorPageComponent {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly activeTab = signal<EditorTab>('dsl');
+  /** Saved graph layout loaded from the backend. Null until loaded. */
+  readonly graphLayout = signal<LayoutData | null>(null);
 
   readonly scenesOpen = signal(true);
   readonly variablesOpen = signal(true);
   readonly charactersOpen = signal(true);
+
+  private readonly layoutChange$ = new Subject<LayoutData>();
 
   constructor() {
     this.route.paramMap.pipe(
@@ -52,6 +57,8 @@ export class EditorPageComponent {
         this.project.set(project);
         this.loading.set(false);
         this.store.updateDsl(project.dslText);
+
+        this.graphLayout.set(project.layouts[0]?.data ?? null);
       }),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
@@ -60,6 +67,17 @@ export class EditorPageComponent {
         this.router.navigate(['/projects']);
       },
     });
+
+    // Debounced layout persistence: save at most once per 800ms of quiet.
+    this.layoutChange$.pipe(
+      debounceTime(800),
+      switchMap(data => {
+        const proj = this.project();
+        if (!proj) return EMPTY;
+        return this.api.saveLayout(proj.id, data);
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe();
 
     // Sync diagnostics → Monaco markers
     effect(() => {
@@ -86,6 +104,7 @@ export class EditorPageComponent {
       case '1':
         event.preventDefault();
         this.activeTab.set('dsl');
+        setTimeout(() => this.monacoHost()?.getEditor()?.layout(), 0);
         break;
       case '2':
         event.preventDefault();
@@ -94,12 +113,18 @@ export class EditorPageComponent {
       case '3':
         event.preventDefault();
         this.activeTab.set('split');
+        setTimeout(() => this.monacoHost()?.getEditor()?.layout(), 0);
         break;
     }
   }
 
   setTab(tab: EditorTab): void {
     this.activeTab.set(tab);
+    if (tab === 'dsl' || tab === 'split') {
+      // Monaco can't measure its container while it's hidden (display:none).
+      // Defer layout() by one tick so the browser has re-laid out the pane first.
+      setTimeout(() => this.monacoHost()?.getEditor()?.layout(), 0);
+    }
   }
 
   toggleScenes(): void {
@@ -145,14 +170,22 @@ export class EditorPageComponent {
 
   onGraphSceneSelected(sceneId: string): void {
     this.store.selectScene(sceneId);
-    // If split mode, also reveal in Monaco
-    if (this.activeTab() === 'split') {
-      const scene = this.store.scenes().find(s => s.id === sceneId);
-      const host = this.monacoHost();
-      if (scene && host) {
-        host.revealLine(scene.line);
-      }
+    // Reveal line in Monaco regardless of active tab.
+    // Monaco is always in the DOM (via [hidden]), so revealLine + setPosition
+    // work even when the pane is hidden — the editor remembers the position
+    // and shows it when the user switches to DSL or split mode.
+    const scene = this.store.scenes().find(s => s.id === sceneId);
+    const host = this.monacoHost();
+    if (scene && host) {
+      host.revealLine(scene.line);
     }
+  }
+
+  onLayoutReady(data: LayoutData): void {
+    // Update local signal so if the graph re-renders it won't recompute dagre.
+    this.graphLayout.set(data);
+    // Debounce the network save.
+    this.layoutChange$.next(data);
   }
 
   publish(): void {

@@ -16,6 +16,7 @@ import { CurrentUser, AuthenticatedUser } from '../auth/decorators/current-user.
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { SaveLayoutDto } from './dto/save-layout.dto';
 
 @UseGuards(JwtAccessGuard)
 @Controller('projects')
@@ -51,6 +52,16 @@ export class ProjectsController {
     @Body() dto: UpdateProjectDto,
   ) {
     return this.projectsService.update(id, user.userId, dto);
+  }
+
+  @Patch(':id/layout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  saveLayout(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SaveLayoutDto,
+  ) {
+    return this.projectsService.saveLayout(id, user.userId, dto.data as Record<string, unknown>);
   }
 
   @Delete(':id')

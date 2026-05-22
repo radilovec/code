@@ -1,17 +1,135 @@
 <div class="graph-container">
-  <f-flow>
+  <!--
+    Hidden SVG that defines the arrowhead marker used by all connection paths.
+    Must be at document level (outside f-flow) so url(#edge-arrow) is reachable.
+  -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <marker id="edge-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <f-flow fDraggable>
     <f-canvas fZoom [fZoomMinimum]="0.2" [fZoomMaximum]="2">
+      <!--
+        f-background MUST be inside f-canvas — it is the interactive drag surface
+        for pan. When outside f-canvas it renders as a static layer with no events.
+      -->
       <f-background>
         <f-circle-pattern [radius]="1" color="rgba(255,255,255,0.045)"></f-circle-pattern>
       </f-background>
 
-      <!-- T5.2 — nodes and edges will be rendered here -->
+      <!-- Connections come before nodes to match Foblex layer order -->
+      @for (edge of edges(); track edge.id) {
+        <f-connection
+          [fConnectionId]="edge.id"
+          [fOutputId]="edge.sourceId + '-output'"
+          [fInputId]="edge.targetId + '-input'"
+          fType="bezier"
+          [fSelectionDisabled]="true"
+          [class.conditional]="edge.hasCondition"
+        ></f-connection>
+      }
+
+      <!--
+        One fNode div per node — never wrap fNode in @if (breaks ng-content select="[fNode]").
+        Inner content uses @if/@else for per-type layout.
+      -->
+      @for (node of nodes(); track node.id) {
+        <div fNode fDragHandle
+             [fNodeId]="node.id"
+             [fNodePosition]="{ x: node.x, y: node.y }"
+             [fNodeSize]="{ width: node.width, height: node.height }"
+             class="node"
+             [class.n-scene]="node.type === 'scene'"
+             [class.n-choice]="node.type === 'choice'"
+             [class.n-cond]="node.type === 'condition'"
+             [class.n-end]="node.type === 'ending'"
+             [class.selected]="selectedSceneId() === node.id"
+             [class.unreach]="node.unreachable"
+             (click)="onNodeClick(node.id)"
+             (fNodePositionChange)="onNodePositionChange(node.id, $event)">
+
+          <div fNodeInput [fInputId]="node.id + '-input'" fInputConnectableSide="left" class="n-handle l"></div>
+
+          @if (node.type === 'scene') {
+            <!-- ── Scene: blue rect with video thumb ── -->
+            <div class="row">
+              <div class="thumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </div>
+              <div>
+                <div class="name">{{ node.label }}</div>
+                @if (node.sub) {
+                  <div class="sub text-sub">{{ node.sub }}</div>
+                }
+                @if (node.meta) {
+                  <div class="meta">{{ node.meta }}</div>
+                }
+              </div>
+            </div>
+          } @else if (node.type === 'choice') {
+            <!-- ── Choice: yellow diamond (rotated square bg + content) ── -->
+            <div class="diamond-bg"></div>
+            <div class="n-choice-inner">
+              <div class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+              <div class="label">{{ node.label }}</div>
+              @if (node.sub) {
+                <div class="sub">{{ node.sub }}</div>
+              }
+            </div>
+          } @else if (node.type === 'condition') {
+            <!-- ── Condition: purple hex (clip-path) ── -->
+            <div class="hex-bg"></div>
+            <div class="n-cond-inner">
+              <div class="label">{{ node.label }}</div>
+              <div class="sub">if · else</div>
+            </div>
+          } @else {
+            <!-- ── Ending: green pill ── -->
+            <div class="ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div>
+              <div class="label">{{ node.label }}</div>
+              <div class="sub">ending</div>
+            </div>
+          }
+
+          @if (node.unreachable) {
+            <div class="warn-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+          }
+
+          <div fNodeOutput [fOutputId]="node.id + '-output'" fOutputConnectableSide="right" class="n-handle r"></div>
+        </div>
+      }
+
     </f-canvas>
   </f-flow>
 
   <!-- Derived hint banner -->
   <div class="derived-hint">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
          stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/>
       <line x1="12" y1="16" x2="12" y2="12"/>

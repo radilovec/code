@@ -4,11 +4,14 @@
   <header class="topbar">
     <div class="topbar-left">
       <a class="back-btn" routerLink="/projects" aria-label="Назад к проектам">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
         </svg>
       </a>
+
+      <div class="sep-v"></div>
 
       <div class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
@@ -78,17 +81,30 @@
 
     <div class="topbar-right">
       @if (store.errors().length > 0) {
-        <span class="error-indicator">
+        <span class="pill-indicator pill-error">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
           {{ store.errors().length }} {{ store.errors().length === 1 ? 'ошибка' : 'ошибок' }}
         </span>
       }
       @if (store.warnings().length > 0) {
-        <span class="warning-indicator">
+        <span class="pill-indicator pill-warning">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+          </svg>
           {{ store.warnings().length }} {{ store.warnings().length === 1 ? 'предупреждение' : 'предупреждений' }}
         </span>
       }
       @if (saving()) {
         <span class="save-indicator">Сохранение…</span>
+      } @else {
+        <span class="saved-indicator">Сохранено</span>
       }
       <button
         class="btn-publish"
@@ -140,21 +156,16 @@
                   type="button"
                   (click)="goToScene(scene.id)"
                 >
-                  <span class="item-icon">
-                    @if (scene.type === 'ending') {
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="10"/>
-                      </svg>
-                    } @else {
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
-                           stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                      </svg>
-                    }
-                  </span>
+                  <span class="item-dot"
+                        [style.background]="scene.unreachable ? 'var(--text-dim)' : 'var(--node-scene)'"></span>
                   <span class="item-label">{{ scene.name }}</span>
                   @if (scene.unreachable) {
-                    <span class="item-badge warning" title="Недостижимая сцена">!</span>
+                    <svg class="item-warn-badge" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
                   }
                 </button>
               }
@@ -184,9 +195,9 @@
             } @else {
               @for (variable of store.variables(); track variable.name) {
                 <div class="section-item variable-item">
-                  <span class="item-label">{{ variable.name }}</span>
-                  <span class="item-type">{{ variable.type }}</span>
-                  <span class="item-value">{{ variable.initialValue }}</span>
+                  <span class="var-name">{{ variable.name }}</span>
+                  <span class="var-eq">=</span>
+                  <span class="var-val">{{ variable.initialValue }}</span>
                 </div>
               }
             }
@@ -232,30 +243,31 @@
     <main class="main-area" [class.split-mode]="activeTab() === 'split'">
       @if (!loading() && project()) {
 
-        <!-- DSL tab -->
-        @if (activeTab() === 'dsl' || activeTab() === 'split') {
-          <div class="pane dsl-pane">
-            <app-monaco-host
-              #monacoHost
-              [initialValue]="project()!.dslText"
-              (contentChange)="onDslChange($event)"
-              (save)="onSaveDsl($event)"
-            />
-          </div>
-        }
+        <!-- DSL tab (hidden instead of @if to preserve Monaco instance across tab switches) -->
+        <div class="pane dsl-pane"
+             [hidden]="activeTab() === 'graph'">
+          <app-monaco-host
+            #monacoHost
+            [initialValue]="project()!.dslText"
+            (contentChange)="onDslChange($event)"
+            (save)="onSaveDsl($event)"
+          />
+        </div>
 
         <!-- Splitter (only in split mode) -->
         @if (activeTab() === 'split') {
           <div class="splitter" aria-label="Разделитель панелей"></div>
         }
 
-        <!-- Graph tab -->
+        <!-- Graph tab (@if so Foblex Flow gets correct container size on mount) -->
         @if (activeTab() === 'graph' || activeTab() === 'split') {
           <div class="pane graph-pane">
             <app-graph-view
               [model]="store.parsedModel()"
               [selectedSceneId]="store.selectedSceneId()"
+              [savedLayout]="graphLayout()"
               (sceneSelected)="onGraphSceneSelected($event)"
+              (layoutReady)="onLayoutReady($event)"
             />
           </div>
         }

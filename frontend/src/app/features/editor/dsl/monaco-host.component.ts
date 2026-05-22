@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
-import { debounceTime, switchMap, take } from 'rxjs/operators';
+import { debounceTime, take } from 'rxjs/operators';
 import { MonacoLoaderService } from './monaco-loader.service';
 import { registerStoryDsl } from './storydsl.language';
 
@@ -31,7 +31,7 @@ export class MonacoHostComponent {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly loader = inject(MonacoLoaderService);
-  private readonly containerRef = viewChild.required<ElementRef<HTMLDivElement>>('editorContainer');
+  private readonly containerRef = viewChild<ElementRef<HTMLDivElement>>('editorContainer');
 
   private editor: ReturnType<typeof monaco.editor.create> | null = null;
   private readonly saveSubject = new Subject<string>();
@@ -56,7 +56,9 @@ export class MonacoHostComponent {
   }
 
   private createEditor(): void {
-    const container = this.containerRef().nativeElement;
+    const ref = this.containerRef();
+    if (!ref) return;
+    const container = ref.nativeElement;
 
     this.editor = monaco.editor.create(container, {
       value: this.initialValue(),

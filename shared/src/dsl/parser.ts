@@ -182,9 +182,13 @@ class Parser {
     const declarations: Declaration[] = [];
 
     while (!this.isAtEnd()) {
+      const prevPos = this.pos;
       const decl = this.parseDeclaration();
       if (decl !== null) {
         declarations.push(decl);
+      }
+      if (this.pos === prevPos) {
+        this.advance(); // prevent infinite loop on unrecognized/partial tokens
       }
     }
 
@@ -319,9 +323,13 @@ class Parser {
     const stmts: Statement[] = [];
 
     while (!this.isAtEnd() && !this.check('RBRACE')) {
+      const prevPos = this.pos;
       const stmt = this.parseStatement();
       if (stmt !== null) {
         stmts.push(stmt);
+      }
+      if (this.pos === prevPos) {
+        this.advance(); // prevent infinite loop on unrecognized/partial tokens
       }
     }
 

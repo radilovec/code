@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -75,6 +76,31 @@ export class ProjectsService {
     await this.assertOwner(id, userId);
 
     await this.prisma.project.delete({ where: { id } });
+  }
+
+  async saveLayout(
+    id: string,
+    userId: string,
+    data: Record<string, unknown>,
+  ): Promise<void> {
+    await this.assertOwner(id, userId);
+
+    const jsonData = data as Prisma.InputJsonValue;
+    const existing = await this.prisma.layout.findFirst({
+      where: { projectId: id },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await this.prisma.layout.update({
+        where: { id: existing.id },
+        data: { data: jsonData },
+      });
+    } else {
+      await this.prisma.layout.create({
+        data: { projectId: id, data: jsonData },
+      });
+    }
   }
 
   private async assertOwner(id: string, userId: string): Promise<void> {
