@@ -1,0 +1,177 @@
+<header class="mhead">
+  <div class="mark" aria-hidden="true">
+    @if (publishResult()) {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3" transform="rotate(180 12 9)"/>
+      </svg>
+    }
+  </div>
+  <div class="mhead-text">
+    @if (publishResult(); as result) {
+      <h2>Опубликовано <span class="version-badge">v{{ result.version }}</span></h2>
+      <p>Интерактивное видео доступно зрителям прямо сейчас.</p>
+    } @else {
+      <h2>Опубликовать проект</h2>
+      <p>Версия станет доступна зрителям сразу после публикации.</p>
+    }
+  </div>
+  <button class="icon-btn" type="button" aria-label="Закрыть" (click)="cancel()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+</header>
+
+<div class="mbody">
+
+  @if (publishResult(); as result) {
+
+    <!-- SUCCESS STATE -->
+    <div class="success-banner">
+      <span class="success-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </span>
+      <div>
+        <div class="success-title">Публикация прошла успешно</div>
+        <div class="success-sub">{{ result.sceneCount }} сцен · {{ result.choiceCount }} вариантов</div>
+      </div>
+    </div>
+
+    <section class="sec">
+      <h4>Ссылка для зрителей</h4>
+      <div class="url-card">
+        <span class="url-text">{{ playUrl() }}</span>
+        <button class="copy-btn" type="button" (click)="copyLink()">
+          @if (copied()) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Скопировано
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Копировать
+          }
+        </button>
+      </div>
+    </section>
+
+  } @else {
+
+    <!-- FORM STATE -->
+
+    <!-- METRICS -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="lab">Сцен</div>
+        <div class="val">{{ scenesCount }}</div>
+      </div>
+      <div class="metric">
+        <div class="lab">Вариантов</div>
+        <div class="val">{{ choicesCount }}</div>
+      </div>
+      <div class="metric">
+        <div class="lab">Переменных</div>
+        <div class="val">{{ variablesCount }}</div>
+      </div>
+      <div class="metric">
+        <div class="lab">Концовок</div>
+        <div class="val">{{ endingsCount }}</div>
+      </div>
+    </div>
+
+    <!-- WARNINGS -->
+    @if (data.warnings.length > 0) {
+      <section class="sec">
+        <h4>
+          Предупреждения
+          <span class="count warn">{{ data.warnings.length }}</span>
+          <span class="meta">не блокируют публикацию</span>
+        </h4>
+        <div class="warn-list">
+          @for (scene of data.warnings; track scene.id) {
+            <div class="warn-card">
+              <span class="ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </span>
+              <div class="wbody">
+                <div class="ttl">Сцена <code>{{ scene.id }}</code> недостижима</div>
+                <div class="sub">Ни один путь в графе не ведёт к этой сцене. Зрители её не увидят.</div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- DESCRIPTION -->
+    <section class="sec desc-sec">
+      <h4>Описание изменений <span class="meta">видно в истории версий</span></h4>
+      <div class="desc-card">
+        <textarea
+          [formControl]="descriptionControl"
+          placeholder="Что нового в этой версии?"
+          maxlength="500"
+        ></textarea>
+        <div class="desc-foot">
+          <span class="desc-foot-label">Markdown</span>
+          <span class="desc-foot-count">{{ descriptionLength() }} / 500</span>
+        </div>
+      </div>
+    </section>
+
+  }
+
+</div>
+
+<!-- FOOTER -->
+<footer class="mfoot">
+  <div class="spacer"></div>
+  @if (publishResult()) {
+    <button class="btn btn-ghost" type="button" (click)="cancel()">
+      Закрыть
+    </button>
+  } @else {
+    <button class="btn btn-ghost" type="button" (click)="cancel()">
+      Отмена
+      <span class="kbd">Esc</span>
+    </button>
+    <button class="btn btn-primary" type="button" [disabled]="publishing()" (click)="confirm()">
+      @if (publishing()) {
+        <span class="spinner"></span>
+        Публикация…
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3" transform="rotate(180 12 9)"/>
+        </svg>
+        Опубликовать
+        <span class="kbd">&#8984;&#8629;</span>
+      }
+    </button>
+  }
+</footer>

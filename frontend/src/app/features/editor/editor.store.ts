@@ -57,6 +57,13 @@ export class EditorStore {
     this.diagnostics().filter(d => d.severity === 'warning'),
   );
 
+  readonly selectedScene = computed(() => {
+    const id = this.selectedSceneId();
+    const model = this.parsedModel();
+    if (!id || !model) return null;
+    return model.scenes.get(id) ?? null;
+  });
+
   /**
    * Update DSL text and re-run the full pipeline.
    * Called on every content change from Monaco.

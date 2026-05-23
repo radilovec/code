@@ -40,4 +40,11 @@ export class EditorApiService {
   saveLayout(id: string, data: LayoutData): Observable<void> {
     return this.http.patch<void>(`/api/projects/${id}/layout`, { data });
   }
+
+  publish(projectId: string): Observable<{ version: number; publicId: string; sceneCount: number; choiceCount: number }> {
+    return this.http.post<{ version: number; publicId: string; sceneCount: number; choiceCount: number }>(
+      `/api/publish/${projectId}`,
+      {},
+    );
+  }
 }

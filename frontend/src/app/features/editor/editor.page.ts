@@ -11,10 +11,13 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, EMPTY, switchMap, tap, debounceTime } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { EditorApiService, ProjectDetail } from './editor.api';
 import { MonacoHostComponent } from './dsl/monaco-host.component';
 import { GraphViewComponent } from './graph/graph-view.component';
 import { EditorStore } from './editor.store';
+import { ScenePropsComponent } from './scene-props/scene-props.component';
+import { PublishDialogComponent } from './publish/publish-dialog.component';
 import type { LayoutData } from './graph/dagre-layout';
 
 export type EditorTab = 'dsl' | 'graph' | 'split';
@@ -23,7 +26,7 @@ export type EditorTab = 'dsl' | 'graph' | 'split';
   selector: 'app-editor-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MonacoHostComponent, GraphViewComponent],
+  imports: [RouterLink, MonacoHostComponent, GraphViewComponent, ScenePropsComponent],
   providers: [EditorStore],
   templateUrl: './editor.page.html',
   styleUrl: './editor.page.scss',
@@ -32,6 +35,7 @@ export class EditorPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(EditorApiService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly store = inject(EditorStore);
@@ -188,7 +192,34 @@ export class EditorPageComponent {
     this.layoutChange$.next(data);
   }
 
+  onCloseSceneProps(): void {
+    this.store.selectScene(null);
+  }
+
+  onJumpToDsl(): void {
+    const scene = this.store.selectedScene();
+    const host = this.monacoHost();
+    if (!scene || !host) return;
+
+    this.activeTab.set('dsl');
+    setTimeout(() => {
+      this.monacoHost()?.getEditor()?.layout();
+      host.revealLine(scene.line);
+    }, 0);
+  }
+
   publish(): void {
-    // T6.3 — реализуется в задаче публикации
+    const proj = this.project();
+    if (!proj) return;
+
+    const scenes = this.store.scenes();
+    const variables = this.store.variables();
+    const warnings = scenes.filter(s => s.unreachable);
+
+    this.dialog.open(PublishDialogComponent, {
+      data: { projectId: proj.id, scenes, variables, warnings },
+      panelClass: 'sf-dialog-panel',
+      backdropClass: 'sf-dialog-backdrop',
+    });
   }
 }

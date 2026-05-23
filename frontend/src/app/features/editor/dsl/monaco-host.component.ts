@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  afterNextRender,
   inject,
   input,
   output,
@@ -42,7 +43,12 @@ export class MonacoHostComponent {
   constructor() {
     this.setupAutoSave();
     this.setupContentChange();
-    this.initMonaco();
+    // Defer Monaco init until after the view is rendered so that containerRef()
+    // (viewChild) is available even when the AMD loader resolves synchronously
+    // (i.e. Monaco is already cached from a previous navigation).
+    afterNextRender(() => {
+      this.initMonaco();
+    });
   }
 
   private initMonaco(): void {

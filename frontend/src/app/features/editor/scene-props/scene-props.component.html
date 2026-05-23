@@ -1,0 +1,213 @@
+<!-- ───── HEADER ───── -->
+<div class="rp-head">
+  <span class="type-chip"
+        [class.chip-ending]="scene().type === 'ending'"
+        [class.chip-choice]="scene().type === 'choice'">
+    <i></i>{{ sceneTypeLabel(scene().type) }}
+  </span>
+  <span class="rp-title">{{ scene().name }}</span>
+  <span class="rp-ident">L{{ scene().line }}</span>
+
+  <div class="rp-actions">
+    <button class="icon-btn" title="Открыть в DSL" (click)="jumpToDsl.emit()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"/>
+        <polyline points="8 6 2 12 8 18"/>
+      </svg>
+    </button>
+    <button class="icon-btn" aria-label="Закрыть" (click)="close.emit()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ───── BODY ───── -->
+<div class="rp-body">
+
+  <!-- Описание -->
+  @if (scene().texts.length > 0) {
+    <section class="rp-sec">
+      <h4>Описание</h4>
+      @for (text of scene().texts; track $index) {
+        <p class="scene-text">{{ text }}</p>
+      }
+    </section>
+  } @else {
+    <section class="rp-sec">
+      <h4>Описание</h4>
+      <p class="scene-text scene-text--empty">Нет текста. Добавьте <code>text "..."</code> в DSL.</p>
+    </section>
+  }
+
+  <!-- Видео -->
+  @if (scene().video) {
+    <section class="rp-sec">
+      <h4>
+        Видео
+        <span class="sec-meta">{{ formatRange(scene().video!.from, scene().video!.to) }}</span>
+      </h4>
+
+      <div class="rp-field">
+        <label>URL источника</label>
+        <div class="field-mono field-url">{{ scene().video!.url }}</div>
+      </div>
+
+      <div class="row2">
+        <div class="rp-field">
+          <label>Начало</label>
+          <div class="field-mono">
+            {{ formatTime(scene().video!.from) }}
+            <span class="unit">сек {{ scene().video!.from }}</span>
+          </div>
+        </div>
+        <div class="rp-field">
+          <label>Конец</label>
+          <div class="field-mono">
+            {{ formatTime(scene().video!.to) }}
+            <span class="unit">сек {{ scene().video!.to }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video preview card -->
+      <div class="vid-card">
+        <div class="vid-preview">
+          <video
+            #videoRef
+            [src]="scene().video!.url"
+            preload="metadata"
+            (loadedmetadata)="onVideoMetadataLoaded()"
+            (timeupdate)="onTimeUpdate()"
+          ></video>
+
+          <!-- Striped placeholder shown before video loads -->
+          <div class="vid-stripe"></div>
+
+          <!-- Play/pause button overlay -->
+          <button class="vid-play-btn" (click)="togglePreview()"
+                  [attr.aria-label]="isPlaying() ? 'Пауза' : 'Воспроизвести фрагмент'">
+            @if (isPlaying()) {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"/>
+                <rect x="14" y="4" width="4" height="16"/>
+              </svg>
+            } @else {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="6 4 20 12 6 20 6 4"/>
+              </svg>
+            }
+          </button>
+
+          <!-- Timecode badge -->
+          <span class="vid-tc">
+            {{ formatTime(scene().video!.from) }} → {{ formatTime(scene().video!.to) }}
+          </span>
+        </div>
+
+        <!-- Timeline bar with clip indicator -->
+        <div class="vid-timeline">
+          <div class="vid-tl-bg"></div>
+          @if (videoDuration() > 0) {
+            <div class="vid-tl-clip"
+                 [style.left]="clipLeft()"
+                 [style.right]="clipRight()">
+            </div>
+          }
+        </div>
+
+        <!-- Preview button -->
+        <button class="vid-preview-btn" (click)="togglePreview()">
+          @if (isPlaying()) {
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+            </svg>
+            Остановить
+          } @else {
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Превью фрагмента
+          }
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- Переходы -->
+  <section class="rp-sec">
+    <h4>
+      Переходы
+      @if (scene().choices.length > 0) {
+        <span class="sec-count">{{ scene().choices.length }}</span>
+      }
+    </h4>
+
+    @if (scene().choices.length === 0) {
+      @if (scene().autoTransitionTo) {
+        <div class="auto-tr">
+          <span class="auto-arrow">→</span>
+          <span class="target-pill">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+            {{ scene().autoTransitionTo }}
+          </span>
+          <span class="auto-label">автопереход</span>
+        </div>
+      } @else {
+        <div class="no-choices">Нет исходящих переходов — концовка</div>
+      }
+    } @else {
+      <div class="tr-list">
+        @for (choice of scene().choices; track $index) {
+          <div class="tr">
+            <div class="tr-head">
+              <span class="tr-arrow">→</span>
+              <span class="target-pill">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+                {{ choice.targetSceneId }}
+              </span>
+              @if (choice.condition) {
+                <span class="cond-badge">when</span>
+              }
+            </div>
+            <div class="tr-label">«{{ choice.label }}»</div>
+            @if (choice.condition) {
+              <div class="tr-cond">
+                <span class="cond-kw">if</span>
+                <span class="cond-exp">{{ choice.condition.displayText }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Недостижимость -->
+  @if (scene().unreachable) {
+    <section class="rp-sec">
+      <div class="unreachable-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Сцена недостижима из стартовой сцены
+      </div>
+    </section>
+  }
+
+</div>
