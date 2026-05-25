@@ -20,10 +20,15 @@ scene end {
 }
 `;
 
-const DEMO_DSL = `set hp = 100
+const DEMO_DSL = `set courage = 0
 set found_key = false
 
+character mentor {
+  description "Опытный детектив, ваш напарник"
+}
+
 scene intro {
+  video "https://example.com/video/intro.mp4" from 0 to 15
   text "Вы входите в тёмный офис после полуночи."
 
   choice "Осмотреться" -> look_around
@@ -32,6 +37,7 @@ scene intro {
 
 scene look_around {
   text "На столе лежит ключ от сейфа."
+  set courage = 1
 
   choice "Взять ключ" -> take_key
   choice "Игнорировать" -> elevator
@@ -41,23 +47,26 @@ scene take_key {
   set found_key = true
   text "Вы подобрали ключ."
 
-  choice "Идти к лифту" -> elevator
+  goto elevator
 }
 
 scene elevator {
   text "Лифт не работает. Что делать?"
 
-  if found_key {
-    choice "Открыть сейф" -> safe_open
-  }
-
+  choice "Открыть сейф" -> safe_open when found_key
+  choice "Взломать дверь" -> safe_open when courage >= 1
   choice "Уйти через лестницу" -> stairs_end
 }
 
 scene safe_open {
+  video "https://example.com/video/safe.mp4" from 15 to 30
   text "В сейфе — документы с компроматом."
 
-  choice "Взять и уйти" -> end_truth
+  if found_key {
+    choice "Изучить документы" -> end_truth
+  } else {
+    choice "Забрать всё" -> end_truth
+  }
 }
 
 scene stairs_end {
