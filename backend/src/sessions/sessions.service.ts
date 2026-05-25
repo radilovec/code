@@ -57,6 +57,7 @@ export class SessionsService {
     // совместим структурно, но Prisma требует точного типа.
     const state: Prisma.InputJsonValue = {
       finalState: dto.finalState as Prisma.InputJsonValue,
+      visitedScenes: (dto.visitedScenes ?? []) as Prisma.InputJsonValue,
       completedAt: completedAt.toISOString(),
     };
 

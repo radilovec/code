@@ -1,0 +1,191 @@
+@if (loading()) {
+  <div class="state-screen">
+    <div class="loader">
+      <div class="spinner"></div>
+      <p class="hint">Загрузка сценария…</p>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="state-screen">
+    <div class="error-card">
+      <div class="error-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h2>Не удалось загрузить</h2>
+      <p class="msg">{{ error() }}</p>
+      <button class="back-btn" (click)="goBack()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Вернуться
+      </button>
+    </div>
+  </div>
+} @else if (currentScene()) {
+  <div class="stage" [class.video-mode]="hasVideo()">
+
+    <!-- VIDEO MODE: dual video elements for preload/crossfade -->
+    @if (hasVideo()) {
+      <video #videoRef class="video-player"
+             [class.active]="primaryIsFirst()"
+             playsinline></video>
+      <video #videoSecondary class="video-player video-secondary"
+             [class.active]="!primaryIsFirst()"
+             playsinline></video>
+      <!-- Scrim overlay when choices are showing -->
+      @if (videoEnded()) {
+        <div class="scrim"></div>
+        <div class="focus-glow"></div>
+      }
+    }
+
+    <!-- TOP UI -->
+    <div class="top-grad"></div>
+    @if (hasVideo()) {
+      <div class="bot-grad"></div>
+    }
+    <header class="top">
+      <button class="exit-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Выйти<span class="kbd">Esc</span>
+      </button>
+
+      <div class="scene-pill">
+        <span class="dot"></span>
+        Сцена · <span class="nm">{{ store.currentSceneId() }}</span>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="proj-tag">
+        v{{ snapshot()!.version }} ·
+        {{ store.sceneIndex() }} / {{ store.totalScenes() }}
+      </div>
+    </header>
+
+    <!-- TEXT MODE: centered card -->
+    @if (!hasVideo()) {
+      <div class="scene-content">
+        @if (currentScene()!.text) {
+          <div class="scene-text">{{ currentScene()!.text }}</div>
+        }
+      </div>
+    }
+
+    <!-- VIDEO MODE: subtitle overlay -->
+    @if (hasVideo() && currentScene()!.text && !videoEnded()) {
+      <div class="cc">{{ currentScene()!.text }}</div>
+    }
+
+    <!-- CHOICES or ENDING -->
+    @if (finished()) {
+      <div class="ending-block">
+        <div class="ending-eyebrow">
+          <span class="dot"></span>Конец истории
+        </div>
+        <h1 class="ending-title">Концовка достигнута</h1>
+        @if (currentScene()!.text) {
+          <p class="ending-scene-text">{{ currentScene()!.text }}</p>
+        }
+        <p class="ending-sub">Пройдено сцен: {{ history().length }}</p>
+        <div class="ending-actions">
+          <button class="action-btn primary" (click)="onRestart()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            Смотреть снова
+          </button>
+          <button class="action-btn" (click)="onShare()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            @if (copied()) { Скопировано! } @else { Поделиться }
+          </button>
+          <button class="action-btn" (click)="goBack()">Выйти</button>
+        </div>
+      </div>
+    } @else if (showChoices() && availableChoices().length > 0) {
+      <section class="choice-block">
+        <div class="prompt">
+          <div class="eyebrow">
+            <span class="dot"></span>Выбор
+          </div>
+        </div>
+
+        <div [class]="'options ' + choiceColsClass()">
+          @for (choice of availableChoices(); track $index; let i = $index) {
+            <button class="opt" type="button" (click)="onChoice(choice.target, choice.label)">
+              <div class="num">{{ i + 1 }}</div>
+              <div class="lab">{{ choice.label }}</div>
+              <div class="footer">
+                <span></span>
+                <span class="kb">{{ i + 1 }}</span>
+              </div>
+            </button>
+          }
+        </div>
+
+        @if (variableEntries().length > 0) {
+          <div class="state-row">
+            @for (entry of variableEntries(); track entry[0]) {
+              <span class="pill">
+                <span class="k">{{ entry[0] }}</span>
+                <span class="v">{{ entry[1] }}</span>
+              </span>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- BOTTOM: video segments info or simple progress -->
+    <div class="bottom">
+      @if (hasVideo() && !videoEnded()) {
+        <div class="segments">
+          <span class="seg-row">воспроизведение</span>
+          <span class="label">
+            <span class="scene">{{ store.currentSceneId() }}</span>
+            <span class="of">·</span>сцена<span class="of">·</span>
+            <span class="total">{{ store.sceneIndex() }} / {{ store.totalScenes() }}</span>
+          </span>
+          <span class="spacer"></span>
+          <span class="time">
+            {{ videoTimeDisplay() }}
+            <span class="dim"> · {{ formatSec(secsUntilChoice()) }} до выбора</span>
+          </span>
+        </div>
+        <div class="progress">
+          <span class="active-bar"
+                [style.width.%]="currentScene()!.video!.endSec > currentScene()!.video!.startSec
+                  ? ((videoCurrentTime() - currentScene()!.video!.startSec) / (currentScene()!.video!.endSec - currentScene()!.video!.startSec)) * 100
+                  : 0">
+          </span>
+        </div>
+      } @else {
+        <div class="thread">
+          <span>история</span>
+          <span class="bar">
+            <i [style.width.%]="store.totalScenes() > 0 ? (store.sceneIndex() / store.totalScenes()) * 100 : 0"></i>
+          </span>
+          <span>{{ store.sceneIndex() }} / {{ store.totalScenes() }}</span>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,4 +1,4 @@
-import { IsISO8601, IsObject, IsOptional } from 'class-validator';
+import { IsArray, IsISO8601, IsObject, IsOptional } from 'class-validator';
 
 /**
  * Тело POST /sessions/snapshot/:publicId.
@@ -13,6 +13,13 @@ export class CreateSessionDto {
    */
   @IsObject()
   finalState!: Record<string, unknown>;
+
+  /**
+   * История посещённых сцен: [{ sceneId, chosenLabel, ts }].
+   */
+  @IsOptional()
+  @IsArray()
+  visitedScenes?: Array<Record<string, unknown>>;
 
   /**
    * Время завершения прохождения (ISO 8601).
