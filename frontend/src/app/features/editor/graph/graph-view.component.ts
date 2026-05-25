@@ -138,10 +138,6 @@ export class GraphViewComponent {
       if (scene.type === 'ending') {
         type = 'ending'; width = END_W; height = END_H;
         sub = 'ending';
-      } else if (scene.video) {
-        type = 'scene'; width = SCENE_W; height = SCENE_H;
-        sub = scene.texts[0] ?? '';
-        meta = this.formatTimecodes(scene.video.from, scene.video.to);
       } else if (scene.choices.length > 0) {
         const allConditional = scene.choices.every(c => c.condition !== undefined);
         if (allConditional) {
@@ -153,9 +149,14 @@ export class GraphViewComponent {
           sub = first ? `→ ${first.targetSceneId}` : '';
         }
       } else {
-        // goto scene or empty scene — treat as regular rect
+        // scene with video/text/goto but no player choices — regular rect
         type = 'scene'; width = SCENE_W; height = SCENE_H;
         sub = scene.texts[0] ?? '';
+      }
+
+      // Video metadata shown for any type that has video
+      if (scene.video) {
+        meta = this.formatTimecodes(scene.video.from, scene.video.to);
       }
 
       return {

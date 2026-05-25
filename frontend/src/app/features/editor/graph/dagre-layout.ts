@@ -22,9 +22,6 @@ function getNodeSize(scene: Scene): { width: number; height: number } {
   if (scene.type === 'ending') {
     return { width: END_W, height: END_H };
   }
-  if (scene.video) {
-    return { width: SCENE_W, height: SCENE_H };
-  }
   if (scene.choices.length > 0) {
     const allConditional = scene.choices.every(c => c.condition !== undefined);
     if (allConditional) {
@@ -32,7 +29,7 @@ function getNodeSize(scene: Scene): { width: number; height: number } {
     }
     return { width: CHOICE_W, height: CHOICE_H };
   }
-  // goto scene or empty → standard rect
+  // scene with video/text/goto but no player choices → standard rect
   return { width: SCENE_W, height: SCENE_H };
 }
 

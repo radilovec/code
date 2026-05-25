@@ -78,14 +78,13 @@ scene lazy_morning {
 }
 
 scene learn_code {
-  video "https://example.com/video/code.mp4" from 90 to 140
   text "Вы погружаетесь в JavaScript и алгоритмы. Первые недели тяжёлые, но вы чувствуете прогресс."
 
   set determination = 1
   set chosen_path = "developer"
 
   choice "Взяться за сложную архитектурную задачу" -> challenge when determination >= 1
-  choice "Сделать по-быстрому, лишь бы работало" -> shortcut
+  choice "Сделать по-быстрому, лишь бы работало" -> shortcut when determination < 1
 }
 
 scene learn_design {
@@ -113,7 +112,6 @@ scene shortcut {
 }
 
 scene office {
-  video "https://example.com/video/office.mp4" from 275 to 320
   text "Проходит полгода. Рутина. Вы сидите на одном месте. Ментор предлагает два варианта: остаться в стабильной компании или рискнуть и уйти в стартап."
 
   choice "Остаться — стабильность важнее" -> stable_end
@@ -121,7 +119,6 @@ scene office {
 }
 
 scene startup {
-  video "https://example.com/video/startup.mp4" from 320 to 370
   text "Вы подаёте заявление об уходе. Стартап — это три человека в коворкинге, амбиции и отсутствие бюджета. Получится?"
 
   if determination >= 3 {
