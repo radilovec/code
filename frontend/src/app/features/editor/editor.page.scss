@@ -568,6 +568,94 @@
   flex-shrink: 0;
 }
 
+// ── Analytics section ────────────────────────────────────────
+.analytics-body {
+  padding: 4px 6px 10px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.metric-value {
+  font-family: var(--f-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.analytics-warn {
+  margin-top: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--r-sm);
+  padding: 8px;
+}
+
+.analytics-warn-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--warning);
+  margin-bottom: 6px;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.analytics-warn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analytics-warn-item {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-family: var(--f-mono);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--text);
+  }
+}
+
 // ── Scene highlighting (when character selected) ─────────────
 .section-item.char-highlight {
   background: rgba(168, 85, 247, 0.10);

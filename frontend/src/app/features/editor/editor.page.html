@@ -296,6 +296,80 @@
         }
       </div>
 
+      <!-- Аналитика -->
+      <div class="section">
+        <button class="section-header" type="button" (click)="toggleAnalytics()">
+          <svg class="chevron" [class.open]="analyticsOpen()"
+               width="12" height="12" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="section-title">Аналитика</span>
+          @if (store.metrics(); as m) {
+            <span class="section-count">{{ m.totalScenes }}</span>
+          }
+        </button>
+        @if (analyticsOpen()) {
+          <div class="section-body analytics-body">
+            @if (store.metrics(); as m) {
+              <div class="metrics-grid">
+                <div class="metric">
+                  <span class="metric-value">{{ m.totalScenes }}</span>
+                  <span class="metric-label">Сцен</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">{{ m.endings }}</span>
+                  <span class="metric-label">Концовок</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">{{ m.choices }}</span>
+                  <span class="metric-label">Переходов</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">{{ m.variables }}</span>
+                  <span class="metric-label">Переменных</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">{{ m.characters }}</span>
+                  <span class="metric-label">Персонажей</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">{{ m.maxDepth }}</span>
+                  <span class="metric-label">Глубина</span>
+                </div>
+              </div>
+
+              @if (m.unreachable > 0) {
+                <div class="analytics-warn">
+                  <div class="analytics-warn-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                         stroke-linejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>{{ m.unreachable }} {{ m.unreachable === 1 ? 'недостижимая сцена' : 'недостижимых сцен' }}</span>
+                  </div>
+                  <div class="analytics-warn-list">
+                    @for (scene of store.unreachableScenes(); track scene.id) {
+                      <button class="analytics-warn-item" type="button" (click)="goToScene(scene.id)">
+                        {{ scene.name }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="empty-section">
+                <span>Нет данных</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
     </aside>
 
     <!-- ───── MAIN AREA ───── -->

@@ -54,6 +54,7 @@ export class EditorPageComponent {
   readonly scenesOpen = signal(true);
   readonly variablesOpen = signal(true);
   readonly charactersOpen = signal(true);
+  readonly analyticsOpen = signal(true);
 
   /** Search query for filtering characters in side-panel. */
   readonly characterSearch = signal('');
@@ -169,6 +170,10 @@ export class EditorPageComponent {
 
   toggleCharacters(): void {
     this.charactersOpen.update(v => !v);
+  }
+
+  toggleAnalytics(): void {
+    this.analyticsOpen.update(v => !v);
   }
 
   onDslChange(dslText: string): void {

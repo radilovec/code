@@ -5,7 +5,50 @@ import {
   analyze,
   buildScenario,
 } from '@interactive-video/shared';
-import type { Scenario, Diagnostic, Declaration } from '@interactive-video/shared';
+import type { Scenario, Diagnostic, Declaration, Scene } from '@interactive-video/shared';
+
+/** Metrics computed from the parsed scenario. */
+export interface ScenarioMetrics {
+  totalScenes: number;
+  endings: number;
+  choices: number;
+  variables: number;
+  characters: number;
+  unreachable: number;
+  maxDepth: number;
+}
+
+/** BFS max depth over domain scenes. */
+function computeMaxDepthFromScenario(scenario: Scenario): number {
+  const startId = scenario.startSceneId;
+  if (!scenario.scenes.has(startId)) return 0;
+
+  const visited = new Set<string>();
+  const queue: string[] = [startId];
+  visited.add(startId);
+  let depth = 0;
+
+  while (queue.length > 0) {
+    const levelSize = queue.length;
+    for (let i = 0; i < levelSize; i++) {
+      const current = queue.shift()!;
+      const scene = scenario.scenes.get(current);
+      if (!scene) continue;
+      // Collect targets from choices and autoTransition
+      const targets: string[] = scene.choices.map(c => c.targetSceneId);
+      if (scene.autoTransitionTo) targets.push(scene.autoTransitionTo);
+      for (const t of targets) {
+        if (!visited.has(t) && scenario.scenes.has(t)) {
+          visited.add(t);
+          queue.push(t);
+        }
+      }
+    }
+    if (queue.length > 0) depth++;
+  }
+
+  return depth;
+}
 
 /**
  * Editor store — signal-based reactive state for the DSL editor.
@@ -62,6 +105,32 @@ export class EditorStore {
     const model = this.parsedModel();
     if (!id || !model) return null;
     return model.scenes.get(id) ?? null;
+  });
+
+  /** Aggregated metrics for the analytics panel. */
+  readonly metrics = computed<ScenarioMetrics | null>(() => {
+    const model = this.parsedModel();
+    if (!model) return null;
+    const scenes = Array.from(model.scenes.values());
+    const totalChoices = scenes.reduce((sum, s) => sum + s.choices.length, 0);
+    const unreachable = scenes.filter(s => s.unreachable).length;
+    const endings = scenes.filter(s => s.type === 'ending').length;
+    return {
+      totalScenes: scenes.length,
+      endings,
+      choices: totalChoices,
+      variables: model.variables.size,
+      characters: model.characters.size,
+      unreachable,
+      maxDepth: computeMaxDepthFromScenario(model),
+    };
+  });
+
+  /** List of unreachable scenes (for analytics warning). */
+  readonly unreachableScenes = computed<Scene[]>(() => {
+    const model = this.parsedModel();
+    if (!model) return [];
+    return Array.from(model.scenes.values()).filter(s => s.unreachable);
   });
 
   /**

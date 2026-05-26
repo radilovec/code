@@ -65,3 +65,53 @@ export function computeReachable(
 
   return reachable;
 }
+
+/**
+ * Вычисляет максимальную глубину графа сцен (longest shortest path от стартовой сцены).
+ * Использует BFS по уровням — глубина = количество уровней BFS - 1.
+ *
+ * @param sceneDecls — все объявления сцен из AST
+ * @param startSceneId — имя стартовой сцены
+ * @returns максимальная глубина (0 если только стартовая сцена)
+ */
+export function computeMaxDepth(
+  sceneDecls: SceneDecl[],
+  startSceneId: string,
+): number {
+  // Строим граф переходов
+  const graph = new Map<string, Set<string>>();
+  for (const scene of sceneDecls) {
+    const targets = new Set<string>();
+    collectTargets(scene.body, targets);
+    graph.set(scene.name, targets);
+  }
+
+  if (!graph.has(startSceneId)) return 0;
+
+  // BFS по уровням
+  const visited = new Set<string>();
+  const queue: string[] = [startSceneId];
+  visited.add(startSceneId);
+  let depth = 0;
+
+  while (queue.length > 0) {
+    const levelSize = queue.length;
+    for (let i = 0; i < levelSize; i++) {
+      const current = queue.shift()!;
+      const targets = graph.get(current);
+      if (targets !== undefined) {
+        for (const target of targets) {
+          if (!visited.has(target) && graph.has(target)) {
+            visited.add(target);
+            queue.push(target);
+          }
+        }
+      }
+    }
+    if (queue.length > 0) {
+      depth++;
+    }
+  }
+
+  return depth;
+}
