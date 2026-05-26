@@ -154,7 +154,12 @@ export class EditorPageComponent {
     this.saving.set(true);
     this.api.update(proj.id, { dslText }).pipe(
       tap(updated => {
-        this.project.set(updated);
+        // Preserve latestPublicId/latestVersion from current project (PATCH doesn't return them)
+        this.project.set({
+          ...updated,
+          latestPublicId: proj.latestPublicId,
+          latestVersion: proj.latestVersion,
+        });
         this.saving.set(false);
       }),
       takeUntilDestroyed(this.destroyRef),
@@ -216,10 +221,16 @@ export class EditorPageComponent {
     const variables = this.store.variables();
     const warnings = scenes.filter(s => s.unreachable);
 
-    this.dialog.open(PublishDialogComponent, {
+    const ref = this.dialog.open(PublishDialogComponent, {
       data: { projectId: proj.id, scenes, variables, warnings },
       panelClass: 'sf-dialog-panel',
       backdropClass: 'sf-dialog-backdrop',
     });
+
+    // After dialog closes, refresh project to pick up latestPublicId
+    ref.afterClosed().pipe(
+      switchMap(() => this.api.get(proj.id)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((updated) => this.project.set(updated));
   }
 }

@@ -5,7 +5,7 @@ import type {
   RuntimeChoice,
   RuntimeState,
 } from '@interactive-video/shared';
-import { evaluate } from '@interactive-video/shared';
+import { evaluate, execute } from '@interactive-video/shared';
 
 export interface HistoryEntry {
   sceneId: string;
@@ -75,6 +75,12 @@ export class PlayerStore {
       },
     ]);
     this._finished.set(false);
+
+    // Execute actions of the start scene (set statements)
+    const startScene = snapshot.scenes[snapshot.startSceneId];
+    if (startScene?.actions?.length) {
+      this._variables.set(execute(startScene.actions, this._variables()) as RuntimeState);
+    }
   }
 
   makeChoice(target: string, label: string): void {
@@ -87,7 +93,12 @@ export class PlayerStore {
     ]);
     this._currentSceneId.set(target);
 
+    // Execute actions of the new scene (set statements)
     const nextScene = snap.scenes[target];
+    if (nextScene.actions?.length) {
+      this._variables.set(execute(nextScene.actions, this._variables()) as RuntimeState);
+    }
+
     if (nextScene.choices.length === 0 && !nextScene.autoTransition) {
       this._finished.set(true);
     }
@@ -106,6 +117,10 @@ export class PlayerStore {
     const snap = this._snapshot();
     if (snap) {
       const nextScene = snap.scenes[target];
+      // Execute actions of the new scene (set statements)
+      if (nextScene?.actions?.length) {
+        this._variables.set(execute(nextScene.actions, this._variables()) as RuntimeState);
+      }
       if (nextScene && nextScene.choices.length === 0 && !nextScene.autoTransition) {
         this._finished.set(true);
       }

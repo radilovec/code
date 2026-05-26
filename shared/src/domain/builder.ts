@@ -148,6 +148,19 @@ function collectChoices(
       case 'Choice':
         choices.push(buildChoice(stmt, contextCondition));
         break;
+      case 'GoTo':
+        // GoTo внутри if/else → синтетический choice с условием контекста
+        if (contextCondition !== undefined) {
+          choices.push({
+            label: stmt.target,
+            targetSceneId: stmt.target,
+            condition: {
+              expression: contextCondition,
+              displayText: expressionToDisplayText(contextCondition),
+            },
+          });
+        }
+        break;
       case 'If': {
         const thenCtx = combineConditions(contextCondition, stmt.condition);
         choices.push(...collectChoices(stmt.thenBranch, thenCtx));
@@ -235,22 +248,14 @@ function findVideo(stmts: Statement[]): VideoSegment | undefined {
   return undefined;
 }
 
-/** Находит первый GoToStmt в теле сцены (рекурсивно). */
+/**
+ * Находит top-level GoToStmt в теле сцены.
+ * НЕ заходит в if/else — goto внутри if/else обрабатываются
+ * collectChoices как синтетические условные choices.
+ */
 function findGoTo(stmts: Statement[]): string | undefined {
   for (const stmt of stmts) {
-    switch (stmt.kind) {
-      case 'GoTo':
-        return stmt.target;
-      case 'If': {
-        const inThen = findGoTo(stmt.thenBranch);
-        if (inThen !== undefined) return inThen;
-        if (stmt.elseBranch !== undefined) {
-          const inElse = findGoTo(stmt.elseBranch);
-          if (inElse !== undefined) return inElse;
-        }
-        break;
-      }
-    }
+    if (stmt.kind === 'GoTo') return stmt.target;
   }
   return undefined;
 }
@@ -403,6 +408,7 @@ export function buildScenario(program: ProgramNode): Scenario {
       type: sceneType,
       texts,
       choices,
+      body: decl.body,
       unreachable: !reachable.has(decl.name),
     };
 

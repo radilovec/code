@@ -28,18 +28,62 @@ export class ProjectsService {
   }
 
   async findAllByUser(userId: string) {
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where: { ownerId: userId },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
         name: true,
         description: true,
+        dslText: true,
         createdAt: true,
         updatedAt: true,
         _count: { select: { publishedSnapshots: true } },
       },
     });
+
+    let buildMiniGraph: ((dsl: string) => {
+      nodes: { id: string; type: string }[];
+      edges: { from: string; to: string }[];
+    } | null) | null = null;
+
+    try {
+      const shared = await import('@interactive-video/shared');
+      buildMiniGraph = (dsl: string) => {
+        if (!dsl.trim()) return null;
+        try {
+          const tokens = shared.tokenize(dsl);
+          const { program } = shared.parse(tokens);
+          const scenario = shared.buildScenario(program);
+          const nodes: { id: string; type: string }[] = [];
+          const edges: { from: string; to: string }[] = [];
+          for (const s of scenario.scenes.values()) {
+            let type: string;
+            if (s.type === 'ending') type = 'ending';
+            else if (s.video) type = 'scene';
+            else if (s.choices.some((c: { condition?: unknown }) => c.condition !== undefined)) type = 'condition';
+            else type = 'choice';
+            nodes.push({ id: s.id, type });
+            for (const c of s.choices) {
+              if (scenario.scenes.has(c.targetSceneId)) {
+                edges.push({ from: s.id, to: c.targetSceneId });
+              }
+            }
+            if (s.autoTransitionTo && scenario.scenes.has(s.autoTransitionTo)) {
+              edges.push({ from: s.id, to: s.autoTransitionTo });
+            }
+          }
+          return { nodes, edges };
+        } catch { return null; }
+      };
+    } catch {
+      this.logger.warn('Could not load shared pipeline for mini graph');
+    }
+
+    return projects.map(({ dslText, ...rest }) => ({
+      ...rest,
+      miniGraph: buildMiniGraph ? buildMiniGraph(dslText) : null,
+    }));
   }
 
   async findOne(id: string, userId: string) {
@@ -56,7 +100,18 @@ export class ProjectsService {
       throw new ForbiddenException('Access denied');
     }
 
-    return project;
+    // Fetch latest published snapshot's publicId
+    const latestSnapshot = await this.prisma.publishedSnapshot.findFirst({
+      where: { projectId: id },
+      orderBy: { version: 'desc' },
+      select: { publicId: true, version: true },
+    });
+
+    return {
+      ...project,
+      latestPublicId: latestSnapshot?.publicId ?? null,
+      latestVersion: latestSnapshot?.version ?? null,
+    };
   }
 
   async update(id: string, userId: string, dto: UpdateProjectDto) {

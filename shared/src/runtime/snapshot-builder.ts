@@ -48,6 +48,7 @@ function convertScene(scene: Scene): RuntimeScene {
       ? { url: scene.video.url, startSec: scene.video.from, endSec: scene.video.to }
       : null,
     choices: scene.choices.map(convertChoice),
+    actions: scene.body,
   };
 
   if (scene.autoTransitionTo !== undefined) {

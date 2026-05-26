@@ -22,15 +22,13 @@ function getNodeSize(scene: Scene): { width: number; height: number } {
   if (scene.type === 'ending') {
     return { width: END_W, height: END_H };
   }
-  if (scene.choices.length > 0) {
-    const allConditional = scene.choices.every(c => c.condition !== undefined);
-    if (allConditional) {
-      return { width: COND_W, height: COND_H };
-    }
-    return { width: CHOICE_W, height: CHOICE_H };
+  if (scene.video) {
+    return { width: SCENE_W, height: SCENE_H };
   }
-  // scene with video/text/goto but no player choices → standard rect
-  return { width: SCENE_W, height: SCENE_H };
+  if (scene.choices.some(c => c.condition !== undefined)) {
+    return { width: COND_W, height: COND_H };
+  }
+  return { width: CHOICE_W, height: CHOICE_H };
 }
 
 /**

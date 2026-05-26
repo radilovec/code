@@ -15,6 +15,8 @@ export interface ProjectDetail {
   description: string | null;
   dslText: string;
   layouts: LayoutRecord[];
+  latestPublicId: string | null;
+  latestVersion: number | null;
   createdAt: string;
   updatedAt: string;
 }

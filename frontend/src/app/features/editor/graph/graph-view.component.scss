@@ -109,10 +109,26 @@ f-flow {
     align-items: center;
     justify-content: center;
     color: rgba(255, 255, 255, 0.35);
+    position: relative;
+    overflow: hidden;
 
-    svg {
+    .thumb-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-icon {
       width: 14px;
       height: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    &.has-preview .thumb-icon {
+      display: none;
     }
   }
 

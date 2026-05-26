@@ -6,7 +6,7 @@
 // для диагностики в редакторе Monaco. Исключение: Diagnostic
 // (нижняя секция) — он содержит позицию для Monaco markers.
 
-import type { Expression } from '../dsl/ast.types.js';
+import type { Expression, Statement } from '../dsl/ast.types.js';
 
 // ─────────────────────────────────────────────
 // CONDITION — условие выбора (compile-time из AST Expression)
@@ -142,6 +142,11 @@ export interface Scene {
    * Если задан — choices должны быть пустыми.
    */
   autoTransitionTo?: string;
+  /**
+   * Исходные инструкции тела сцены (из AST).
+   * Используются snapshot builder'ом для передачи actions в runtime.
+   */
+  body: Statement[];
   /**
    * True, если сцена недостижима из стартовой.
    * Заполняется семантическим анализатором (T2.5), не builder'ом.

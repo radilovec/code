@@ -26,6 +26,8 @@ interface DisplayNode {
   label: string;
   sub: string;
   meta: string;
+  videoUrl: string | null;
+  videoFrom: number;
   x: number;
   y: number;
   width: number;
@@ -138,20 +140,19 @@ export class GraphViewComponent {
       if (scene.type === 'ending') {
         type = 'ending'; width = END_W; height = END_H;
         sub = 'ending';
-      } else if (scene.choices.length > 0) {
-        const allConditional = scene.choices.every(c => c.condition !== undefined);
-        if (allConditional) {
-          type = 'condition'; width = COND_W; height = COND_H;
-          sub = 'if · else';
-        } else {
-          type = 'choice'; width = CHOICE_W; height = CHOICE_H;
-          const first = scene.choices[0];
-          sub = first ? `→ ${first.targetSceneId}` : '';
-        }
-      } else {
-        // scene with video/text/goto but no player choices — regular rect
+      } else if (scene.video) {
+        // Has video → scene card (blue rect)
         type = 'scene'; width = SCENE_W; height = SCENE_H;
         sub = scene.texts[0] ?? '';
+      } else if (scene.choices.some(c => c.condition !== undefined)) {
+        // Has conditional choices → condition hex (purple)
+        type = 'condition'; width = COND_W; height = COND_H;
+        sub = 'if · else';
+      } else {
+        // Default → choice diamond (yellow)
+        type = 'choice'; width = CHOICE_W; height = CHOICE_H;
+        const first = scene.choices[0];
+        sub = first ? `→ ${first.targetSceneId}` : '';
       }
 
       // Video metadata shown for any type that has video
@@ -165,6 +166,8 @@ export class GraphViewComponent {
         label: scene.name,
         sub,
         meta,
+        videoUrl: scene.video?.url ?? null,
+        videoFrom: scene.video?.from ?? 0,
         x: pos.x,
         y: pos.y,
         width,

@@ -21,7 +21,13 @@
         <circle cx="11" cy="11" r="8"/>
         <path d="m21 21-4.3-4.3"/>
       </svg>
-      <input placeholder="Поиск проектов…" aria-label="Поиск проектов">
+      <input
+        #searchInput
+        placeholder="Поиск проектов…"
+        aria-label="Поиск проектов"
+        [value]="searchQuery()"
+        (input)="searchQuery.set(searchInput.value)"
+      >
       <span class="kbd">⌘K</span>
     </div>
 
@@ -107,7 +113,11 @@
             <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           </svg>
         </div>
-        @if (activeFilter() === 'all') {
+        @if (searchQuery()) {
+          <p class="empty-title">Ничего не найдено</p>
+          <p class="empty-sub">По запросу «{{ searchQuery() }}» проектов не найдено</p>
+          <button class="btn btn-ghost" type="button" (click)="searchQuery.set(''); searchInput.value = ''">Сбросить поиск</button>
+        } @else if (activeFilter() === 'all') {
           <p class="empty-title">Пока нет проектов</p>
           <p class="empty-sub">Создайте первый интерактивный сценарий</p>
           <button class="btn btn-primary" type="button" (click)="openNewProjectDialog()">
@@ -137,23 +147,27 @@
             (keydown.enter)="openProject(project)"
             [attr.aria-label]="'Открыть проект ' + project.name"
           >
-            <!-- Thumbnail -->
+            <!-- Thumbnail: mini graph -->
+            @let layout = thumbLayout(project.miniGraph);
             <div class="thumb">
               <div class="thumb-stripes"></div>
-              <!-- Mini graph placeholder SVG -->
               <svg class="thumb-graph" viewBox="0 0 480 270" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-                <g class="node-line">
-                  <line x1="80" y1="135" x2="200" y2="80"/>
-                  <line x1="80" y1="135" x2="200" y2="190"/>
-                  <line x1="200" y1="80" x2="340" y2="135"/>
-                  <line x1="200" y1="190" x2="340" y2="135"/>
-                </g>
-                <g>
-                  <rect x="60"  y="121" width="40" height="28" rx="4" fill="#3b82f6" opacity=".5"/>
-                  <rect x="180" y="66"  width="40" height="28" rx="4" fill="#f59e0b" opacity=".5"/>
-                  <rect x="180" y="156" width="40" height="28" rx="4" fill="#f59e0b" opacity=".5"/>
-                  <rect x="320" y="121" width="40" height="28" rx="4" fill="#10b981" opacity=".7"/>
-                </g>
+                <!-- Edges (bezier curves) -->
+                @for (e of layout.edges; track $index) {
+                  <path [attr.d]="edgePath(e)" class="sh-edge"/>
+                }
+                <!-- Nodes -->
+                @for (n of layout.nodes; track n.id) {
+                  @if (n.type === 'scene') {
+                    <rect [attr.x]="n.cx - 20" [attr.y]="n.cy - 14" width="40" height="28" rx="4" class="sh-scene"/>
+                  } @else if (n.type === 'choice') {
+                    <rect [attr.x]="n.cx - 12" [attr.y]="n.cy - 12" width="24" height="24" rx="3" class="sh-choice" [attr.transform]="'rotate(45 ' + n.cx + ' ' + n.cy + ')'"/>
+                  } @else if (n.type === 'condition') {
+                    <polygon [attr.points]="(n.cx-20)+','+n.cy+' '+(n.cx-10)+','+(n.cy-14)+' '+(n.cx+10)+','+(n.cy-14)+' '+(n.cx+20)+','+n.cy+' '+(n.cx+10)+','+(n.cy+14)+' '+(n.cx-10)+','+(n.cy+14)" class="sh-condition"/>
+                  } @else {
+                    <rect [attr.x]="n.cx - 20" [attr.y]="n.cy - 10" width="40" height="20" rx="10" class="sh-ending"/>
+                  }
+                }
               </svg>
               <div
                 class="thumb-status"

@@ -57,8 +57,8 @@ export class PlayerPageComponent {
   readonly isEnding = this.store.isEnding;
   readonly finished = this.store.finished;
 
-  /** Whether the current scene has video */
-  readonly hasVideo = computed(() => !!this.currentScene()?.video);
+  /** Whether the current scene has video (and it loaded successfully) */
+  readonly hasVideo = computed(() => !!this.currentScene()?.video && !this.videoError());
 
   /** Whether the primary video element is the first one (for crossfade CSS) */
   readonly primaryIsFirst = signal(true);
@@ -66,8 +66,14 @@ export class PlayerPageComponent {
   /** Whether video has reached endSec and choices should be shown */
   readonly videoEnded = signal(false);
 
+  /** Whether video failed to load (fallback to text mode) */
+  readonly videoError = signal(false);
+
   /** Whether video is currently playing */
   readonly videoPlaying = signal(false);
+
+  /** Whether autoplay was blocked and user must click to start */
+  readonly autoplayBlocked = signal(false);
 
   /** Current video time for progress display */
   readonly videoCurrentTime = signal(0);
@@ -169,6 +175,8 @@ export class PlayerPageComponent {
 
       this.videoEnded.set(false);
       this.videoPlaying.set(false);
+      this.videoError.set(false);
+      this.autoplayBlocked.set(false);
       this.videoCurrentTime.set(scene.video?.startSec ?? 0);
 
       if (scene.video) {
@@ -268,6 +276,18 @@ export class PlayerPageComponent {
         }
       });
 
+    // Video ended naturally (duration < endSec)
+    fromEvent(video, 'ended')
+      .pipe(take(1), takeUntil(until$), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.videoPlaying.set(false);
+        this.videoEnded.set(true);
+        const s = this.currentScene();
+        if (s?.autoTransition && this.availableChoices().length === 0) {
+          this.autoTransitionTimer = setTimeout(() => this.store.followAutoTransition(), 500);
+        }
+      });
+
     // Track play/pause state
     fromEvent(video, 'play')
       .pipe(takeUntil(until$), takeUntilDestroyed(this.destroyRef))
@@ -277,17 +297,30 @@ export class PlayerPageComponent {
       .pipe(takeUntil(until$), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.videoPlaying.set(false));
 
+    // Handle video load error — fallback to text mode
+    fromEvent(video, 'error')
+      .pipe(take(1), takeUntil(until$), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.videoError.set(true);
+        this.videoPlaying.set(false);
+        // If text scene with autoTransition, trigger it
+        const s = this.currentScene();
+        if (s?.autoTransition && this.availableChoices().length === 0) {
+          this.autoTransitionTimer = setTimeout(() => this.store.followAutoTransition(), 800);
+        }
+      });
+
     if (swapped) {
       // Already loaded — seek to start and play
       video.currentTime = startSec;
-      video.play();
+      this.tryPlayVideo(video);
     } else {
       // Seek to start after metadata loaded, then auto-play
       fromEvent(video, 'loadedmetadata')
-        .pipe(takeUntil(until$), takeUntilDestroyed(this.destroyRef))
+        .pipe(take(1), takeUntil(until$), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           video.currentTime = startSec;
-          video.play();
+          this.tryPlayVideo(video);
         });
       video.load();
     }
@@ -299,6 +332,30 @@ export class PlayerPageComponent {
         this.preload.preloadNextScenes(scene, this.store.variables());
       }
     }, 300);
+  }
+
+  /** Try to play video, handling autoplay policy rejection */
+  private tryPlayVideo(video: HTMLVideoElement): void {
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay blocked by browser — show "click to play" overlay
+        this.autoplayBlocked.set(true);
+      });
+    }
+  }
+
+  /** User clicked the "play" overlay — now play() is in a user gesture context */
+  onPlayClick(): void {
+    this.autoplayBlocked.set(false);
+    const elRef = this.videoRef();
+    const secRef = this.videoSecondaryRef();
+    const video = this.primaryIsFirst()
+      ? elRef?.nativeElement
+      : secRef?.nativeElement;
+    if (video) {
+      video.play();
+    }
   }
 
   onChoice(target: string, label: string): void {

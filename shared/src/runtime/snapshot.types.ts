@@ -8,7 +8,7 @@
 // отдаёт path-based выдачу runtime-данных, не редакторскую модель
 // (source.md, раздел Netflix Bandersnatch / Shakti / Falcor).
 
-import type { Expression } from '../dsl/ast.types.js';
+import type { Expression, Statement } from '../dsl/ast.types.js';
 
 // ─────────────────────────────────────────────
 // RUNTIME CHOICE — выбор в снапшоте
@@ -46,6 +46,8 @@ export interface RuntimeScene {
   video: { url: string; startSec: number; endSec: number } | null;
   /** Варианты выбора. Пустой массив = концовка (ending). */
   choices: RuntimeChoice[];
+  /** Исполняемые действия сцены (set, if/set). Выполняются при входе в сцену. */
+  actions: Statement[];
   /** Безусловный автопереход (из goto). undefined = нет. */
   autoTransition?: string;
 }

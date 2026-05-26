@@ -2,6 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface MiniGraph {
+  nodes: { id: string; type: string }[];
+  edges: { from: string; to: string }[];
+}
+
 export interface ProjectSummary {
   id: string;
   name: string;
@@ -9,6 +14,7 @@ export interface ProjectSummary {
   createdAt: string;
   updatedAt: string;
   _count: { publishedSnapshots: number };
+  miniGraph: MiniGraph | null;
 }
 
 export interface CreateProjectPayload {
