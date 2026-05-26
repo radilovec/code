@@ -378,7 +378,8 @@
 
         <!-- DSL tab (hidden instead of @if to preserve Monaco instance across tab switches) -->
         <div class="pane dsl-pane"
-             [hidden]="activeTab() === 'graph'">
+             [hidden]="activeTab() === 'graph'"
+             [style.flex]="activeTab() === 'split' ? splitRatio() : null">
           <app-monaco-host
             #monacoHost
             [initialValue]="project()!.dslText"
@@ -389,12 +390,15 @@
 
         <!-- Splitter (only in split mode) -->
         @if (activeTab() === 'split') {
-          <div class="splitter" aria-label="Разделитель панелей"></div>
+          <div class="splitter"
+               aria-label="Разделитель панелей"
+               (mousedown)="onSplitterMouseDown($event)"></div>
         }
 
         <!-- Graph tab (@if so Foblex Flow gets correct container size on mount) -->
         @if (activeTab() === 'graph' || activeTab() === 'split') {
-          <div class="pane graph-pane">
+          <div class="pane graph-pane"
+               [style.flex]="activeTab() === 'split' ? (1 - splitRatio()) : null">
             <app-graph-view
               [model]="store.parsedModel()"
               [selectedSceneId]="store.selectedSceneId()"

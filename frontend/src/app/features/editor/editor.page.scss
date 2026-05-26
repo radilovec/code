@@ -736,12 +736,4 @@
 }
 
 // ── Split mode layout ────────────────────────────────────────
-.main-area.split-mode {
-  .dsl-pane {
-    flex: 1;
-  }
-
-  .graph-pane {
-    flex: 0.66;
-  }
-}
+// flex values are set dynamically via [style.flex] bindings driven by splitRatio signal

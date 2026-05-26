@@ -56,6 +56,10 @@ export class EditorPageComponent {
   readonly charactersOpen = signal(true);
   readonly analyticsOpen = signal(true);
 
+  /** Split ratio (0–1) — fraction of width for the DSL pane. */
+  readonly splitRatio = signal(0.6);
+  private draggingSplitter = false;
+
   /** Search query for filtering characters in side-panel. */
   readonly characterSearch = signal('');
   /** Selected character name for highlighting related scenes. */
@@ -174,6 +178,35 @@ export class EditorPageComponent {
 
   toggleAnalytics(): void {
     this.analyticsOpen.update(v => !v);
+  }
+
+  onSplitterMouseDown(event: MouseEvent): void {
+    event.preventDefault();
+    this.draggingSplitter = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!this.draggingSplitter) return;
+      const mainArea = (event.target as HTMLElement).parentElement;
+      if (!mainArea) return;
+      const rect = mainArea.getBoundingClientRect();
+      const ratio = Math.min(0.85, Math.max(0.15, (e.clientX - rect.left) / rect.width));
+      this.splitRatio.set(ratio);
+      this.monacoHost()?.getEditor()?.layout();
+    };
+
+    const onMouseUp = () => {
+      this.draggingSplitter = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      this.monacoHost()?.getEditor()?.layout();
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   }
 
   onDslChange(dslText: string): void {
