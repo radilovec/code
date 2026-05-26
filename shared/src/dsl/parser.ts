@@ -51,6 +51,27 @@ export interface ParseResult {
 }
 
 // ─────────────────────────────────────────────
+// УТИЛИТА: ИЗВЛЕЧЕНИЕ @УПОМИНАНИЙ ИЗ СТРОКИ
+// ─────────────────────────────────────────────
+
+/**
+ * Извлекает имена персонажей, упомянутых через @name в строке текста.
+ * Возвращает массив уникальных имён (без символа @).
+ *
+ * Пример: "Тут @boss смотрит, а @guard стоит рядом с @boss"
+ *       → ["boss", "guard"]
+ */
+export function extractMentions(text: string): string[] {
+  const regex = /@([a-zA-Z_][a-zA-Z0-9_]*)/g;
+  const names = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    names.add(match[1]!);
+  }
+  return Array.from(names);
+}
+
+// ─────────────────────────────────────────────
 // КЛАСС ПАРСЕРА
 // ─────────────────────────────────────────────
 
@@ -264,31 +285,75 @@ class Parser {
   // ─────────────────────────────────────────────
 
   /**
-   * character := "character" identifier "{" "description" string "}"
+   * character := "character" identifier "{" character_field* "}"
+   * character_field := "description" string | "name" string | "age" number
    *
-   * Внутри блока character ключевое слово `description` обрабатывается
-   * как ключевое (DESCRIPTION), а не как идентификатор — это контекстная
-   * семантика, упомянутая в memory.md (п.5 техдолга).
+   * Все поля опциональны. Порядок произвольный. `description` обрабатывается
+   * как ключевое слово (DESCRIPTION). `name` и `age` — как IDENTIFIER
+   * (чтобы не ломать их использование как имён переменных вне character-блока).
    */
   private parseCharacter(): CharacterDecl {
     const startTok = this.advance(); // consume 'character'
     const nameTok = this.expect('IDENTIFIER', 'Ожидалось имя персонажа после "character"');
-    const name = nameTok.value;
+    const charId = nameTok.value;
     this.expect('LBRACE', 'Ожидалась "{" после имени персонажа');
 
-    // Внутри character-блока парсим "description <string>"
-    this.expect('DESCRIPTION', 'Ожидалось "description" внутри блока character');
-    const descTok = this.expect('STRING', 'Ожидалась строка описания после "description"');
-    const description = descTok.value;
+    let description = '';
+    let displayName: string | undefined;
+    let age: number | undefined;
+
+    // Цикл по полям внутри { ... } пока не встретим }
+    while (!this.isAtEnd() && !this.check('RBRACE')) {
+      const fieldTok = this.current();
+
+      // description "..." — ключевое слово DESCRIPTION
+      if (fieldTok.kind === 'DESCRIPTION') {
+        this.advance();
+        const descTok = this.expect('STRING', 'Ожидалась строка описания после "description"');
+        description = descTok.value;
+        continue;
+      }
+
+      // name "..." и age N — распознаются как IDENTIFIER по значению
+      if (fieldTok.kind === 'IDENTIFIER' && fieldTok.value === 'name') {
+        this.advance();
+        const valTok = this.expect('STRING', 'Ожидалась строка после "name"');
+        displayName = valTok.value;
+        continue;
+      }
+
+      if (fieldTok.kind === 'IDENTIFIER' && fieldTok.value === 'age') {
+        this.advance();
+        const valTok = this.expect('NUMBER', 'Ожидалось число после "age"');
+        age = parseFloat(valTok.value);
+        continue;
+      }
+
+      // Неожиданный токен внутри character-блока
+      this.addError(
+        `Ожидалось поле персонажа (description, name, age), ` +
+        `но встречено '${fieldTok.value}'`
+      );
+      this.advance();
+    }
 
     const endTok = this.expect('RBRACE', 'Ожидалась "}" для закрытия блока character');
 
-    return {
+    const result: CharacterDecl = {
       kind: 'Character',
-      name,
+      name: charId,
       description,
       span: { start: startTok.span.start, end: endTok.span.end },
     };
+
+    if (displayName !== undefined) {
+      result.displayName = displayName;
+    }
+    if (age !== undefined) {
+      result.age = age;
+    }
+
+    return result;
   }
 
   // ─────────────────────────────────────────────
@@ -392,10 +457,14 @@ class Parser {
 
     const contentTok = this.expect('STRING', 'Ожидалась строка текста после "text"');
 
+    // Постпроцессинг: извлечение inline-упоминаний @name из строки
+    const mentions = extractMentions(contentTok.value);
+
     return {
       kind: 'Text',
       content: contentTok.value,
       ...(characterName !== undefined ? { characterName } : {}),
+      ...(mentions.length > 0 ? { mentions } : {}),
       span: { start: startTok.span.start, end: contentTok.span.end },
     };
   }

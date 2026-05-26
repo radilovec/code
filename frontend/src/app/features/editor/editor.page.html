@@ -165,6 +165,7 @@
                   class="section-item"
                   [class.active]="store.selectedSceneId() === scene.id"
                   [class.unreachable]="scene.unreachable"
+                  [class.char-highlight]="highlightedSceneIds().has(scene.id)"
                   type="button"
                   (click)="goToScene(scene.id)"
                 >
@@ -236,12 +237,58 @@
                 <span>Нет персонажей</span>
               </div>
             } @else {
-              @for (char of store.characters(); track char.name) {
-                <div class="section-item character-item">
-                  <span class="item-label">{{ char.name }}</span>
-                  @if (char.description) {
-                    <span class="item-desc">{{ char.description }}</span>
+              <!-- Search filter -->
+              @if (store.characters().length > 2) {
+                <div class="char-search-wrap">
+                  <svg class="char-search-icon" width="12" height="12" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    class="char-search-input"
+                    type="text"
+                    placeholder="Поиск..."
+                    [ngModel]="characterSearch()"
+                    (ngModelChange)="onCharacterSearchChange($event)"
+                  />
+                </div>
+              }
+
+              @for (char of filteredCharacters(); track char.name) {
+                <button
+                  class="section-item character-item"
+                  [class.active]="selectedCharacterName() === char.name"
+                  type="button"
+                  (click)="onCharacterClick(char)"
+                  (dblclick)="goToCharacterInDsl(char.name)"
+                  [title]="'Двойной клик — перейти к определению в DSL'"
+                >
+                  <span class="char-avatar" [attr.data-initial]="(char.displayName ?? char.name).charAt(0).toUpperCase()">
+                    {{ (char.displayName ?? char.name).charAt(0).toUpperCase() }}
+                  </span>
+                  <span class="char-info">
+                    <span class="char-name">{{ char.displayName ?? char.name }}</span>
+                    @if (char.displayName) {
+                      <span class="char-id">{{ char.name }}</span>
+                    }
+                    @if (char.age !== undefined) {
+                      <span class="char-age">{{ char.age }} лет</span>
+                    }
+                    @if (char.description) {
+                      <span class="char-desc">{{ char.description }}</span>
+                    }
+                  </span>
+                  @if (char.mentionedInScenes.length > 0) {
+                    <span class="char-scenes-count" [title]="'Упоминается в ' + char.mentionedInScenes.length + ' сценах'">
+                      {{ char.mentionedInScenes.length }}
+                    </span>
                   }
+                </button>
+              } @empty {
+                <div class="empty-section">
+                  <span>Не найдено</span>
                 </div>
               }
             }
@@ -290,6 +337,7 @@
     @if (store.selectedScene()) {
       <app-scene-props
         [scene]="store.selectedScene()!"
+        [characters]="store.characters()"
         (close)="onCloseSceneProps()"
         (jumpToDsl)="onJumpToDsl()"
       />

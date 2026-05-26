@@ -712,3 +712,17 @@
     }
   }
 }
+
+// ─── Character @mention styling ──────────────
+
+::ng-deep .mention {
+  color: #4ec9b0;
+  font-weight: 600;
+  cursor: default;
+  border-bottom: 1px dotted rgba(78, 201, 176, 0.4);
+  transition: color 0.15s;
+
+  &:hover {
+    color: #5fd9c0;
+  }
+}

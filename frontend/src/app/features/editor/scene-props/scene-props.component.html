@@ -34,7 +34,7 @@
     <section class="rp-sec">
       <h4>Описание</h4>
       @for (text of scene().texts; track $index) {
-        <p class="scene-text">{{ text }}</p>
+        <p class="scene-text" [innerHTML]="renderText(text)"></p>
       }
     </section>
   } @else {

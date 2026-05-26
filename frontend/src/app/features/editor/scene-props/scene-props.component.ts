@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { Scene } from '@interactive-video/shared';
+import type { Character, Scene } from '@interactive-video/shared';
 
 @Component({
   selector: 'app-scene-props',
@@ -19,6 +19,7 @@ import type { Scene } from '@interactive-video/shared';
 })
 export class ScenePropsComponent {
   readonly scene = input.required<Scene>();
+  readonly characters = input<Character[]>([]);
 
   /** Emitted when the user clicks the "close" button. */
   readonly close = output<void>();
@@ -106,6 +107,18 @@ export class ScenePropsComponent {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /** Replace @mentions with displayName styled spans */
+  renderText(text: string): string {
+    const chars = this.characters();
+    return text.replace(/@([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, id: string) => {
+      const char = chars.find(c => c.name === id);
+      if (!char) return match;
+      const label = char.displayName ?? id;
+      const title = char.description ? ` title="${char.description}"` : '';
+      return `<span class="mention"${title}>${label}</span>`;
+    });
   }
 
   /** Format timecode range with duration: "MM:SS → MM:SS · Xс" */

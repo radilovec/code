@@ -59,6 +59,10 @@ export interface Variable {
  */
 export interface Character {
   name: string;
+  /** Отображаемое имя (из поля `name "..."` в DSL). Если не задано — используется id. */
+  displayName?: string;
+  /** Возраст (из поля `age N` в DSL). Опционально. */
+  age?: number;
   description: string;
   /** ID сцен, где персонаж упомянут (TextStmt с characterName). Производный. */
   mentionedInScenes: string[];

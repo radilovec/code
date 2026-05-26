@@ -173,6 +173,13 @@
   }
 }
 
+// ── Mention in text ──────────────────────────────────────────
+::ng-deep .mention {
+  color: #5de4c7;
+  font-weight: 600;
+  cursor: help;
+}
+
 // ── Video fields ──────────────────────────────────────────────
 .rp-field {
   margin-bottom: 10px;

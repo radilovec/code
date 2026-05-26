@@ -89,14 +89,14 @@
     @if (!hasVideo()) {
       <div class="scene-content">
         @if (currentScene()!.text) {
-          <div class="scene-text">{{ currentScene()!.text }}</div>
+          <div class="scene-text" [innerHTML]="renderSceneText(currentScene()!.text!)"></div>
         }
       </div>
     }
 
     <!-- VIDEO MODE: subtitle overlay -->
     @if (hasVideo() && currentScene()!.text && !videoEnded()) {
-      <div class="cc">{{ currentScene()!.text }}</div>
+      <div class="cc" [innerHTML]="renderSceneText(currentScene()!.text!)"></div>
     }
 
     <!-- CHOICES or ENDING -->
@@ -108,7 +108,7 @@
         </div>
         <h1 class="ending-title">Концовка достигнута</h1>
         @if (currentScene()!.text) {
-          <p class="ending-scene-text">{{ currentScene()!.text }}</p>
+          <p class="ending-scene-text" [innerHTML]="renderSceneText(currentScene()!.text!)"></p>
         }
         <p class="ending-sub">Пройдено сцен: {{ history().length }}</p>
         <div class="ending-actions">

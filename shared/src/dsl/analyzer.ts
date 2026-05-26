@@ -20,6 +20,7 @@ import type {
   GoToStmt,
   IfStmt,
   AssignStmt,
+  TextStmt,
   Span,
 } from './ast.types.js';
 import type { Diagnostic, DiagnosticSeverity } from '../domain/model.types.js';
@@ -190,7 +191,7 @@ class Analyzer {
         this.checkAssign(stmt, localAssigned);
         break;
       case 'Text':
-        // Text не требует семантических проверок на данном этапе
+        this.checkTextMentions(stmt);
         break;
       case 'Video':
         // Video: проверка from < to — полезное предупреждение
@@ -247,6 +248,20 @@ class Analyzer {
     this.checkExpression(stmt.value, localAssigned);
     // После присваивания переменная считается инициализированной в scope
     localAssigned.add(stmt.variable);
+  }
+
+  /** Проверить inline-упоминания @name в тексте: персонаж должен быть объявлен. */
+  private checkTextMentions(stmt: TextStmt): void {
+    if (stmt.mentions === undefined || stmt.mentions.length === 0) return;
+
+    for (const name of stmt.mentions) {
+      if (!this.characterNames.has(name)) {
+        this.addWarning(
+          `Упоминание "@${name}" — персонаж "${name}" не объявлен`,
+          stmt.span,
+        );
+      }
+    }
   }
 
   // ─────────────────────────────────────────────

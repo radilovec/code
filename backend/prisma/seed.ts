@@ -50,7 +50,21 @@ set determination = 0
 set chosen_path = ""
 
 character mentor {
+  name "Александр Петрович"
+  age 48
   description "Опытный технический директор, который видит потенциал в каждом"
+}
+
+character hr {
+  name "Мария Иванова"
+  age 34
+  description "HR-менеджер, отвечает за адаптацию новых сотрудников"
+}
+
+character lead {
+  name "Дмитрий Козлов"
+  age 31
+  description "Тимлид команды разработки, строгий но справедливый"
 }
 
 scene start {

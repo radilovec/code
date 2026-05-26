@@ -50,6 +50,8 @@ export interface RuntimeScene {
   actions: Statement[];
   /** Безусловный автопереход (из goto). undefined = нет. */
   autoTransition?: string;
+  /** Имена персонажей, упомянутых через @name в текстах сцены. Для стилизации в плеере. */
+  mentions?: string[];
 }
 
 // ─────────────────────────────────────────────
@@ -81,4 +83,6 @@ export interface RuntimeSnapshot {
   startSceneId: string;
   /** Все достижимые сцены, ключ — id сцены. */
   scenes: Record<string, RuntimeScene>;
+  /** Справочник персонажей: имя → описание + опциональные поля. Для тултипов в плеере. */
+  characters?: Record<string, { description: string; displayName?: string; age?: number }>;
 }

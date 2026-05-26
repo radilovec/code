@@ -10,7 +10,8 @@
 // При публикации формируется компактный иммутабельный runtime-снапшот
 // (PublishedSnapshot.runtimeJson), который и используется плеером.
 
-import type { Scenario, Scene, Choice } from '../domain/model.types.js';
+import type { Scenario, Scene, Choice, Character } from '../domain/model.types.js';
+import { extractMentions } from '../dsl/parser.js';
 import type {
   RuntimeSnapshot,
   RuntimeScene,
@@ -41,9 +42,19 @@ function convertChoice(choice: Choice): RuntimeChoice {
  * для единообразия с RuntimeSnapshot API.
  */
 function convertScene(scene: Scene): RuntimeScene {
+  const joinedText = scene.texts.length > 0 ? scene.texts.join('\n') : null;
+
+  // Collect inline @mentions from all texts
+  const allMentions = new Set<string>();
+  for (const t of scene.texts) {
+    for (const name of extractMentions(t)) {
+      allMentions.add(name);
+    }
+  }
+
   const runtimeScene: RuntimeScene = {
     id: scene.id,
-    text: scene.texts.length > 0 ? scene.texts.join('\n') : null,
+    text: joinedText,
     video: scene.video !== undefined
       ? { url: scene.video.url, startSec: scene.video.from, endSec: scene.video.to }
       : null,
@@ -53,6 +64,10 @@ function convertScene(scene: Scene): RuntimeScene {
 
   if (scene.autoTransitionTo !== undefined) {
     runtimeScene.autoTransition = scene.autoTransitionTo;
+  }
+
+  if (allMentions.size > 0) {
+    runtimeScene.mentions = Array.from(allMentions);
   }
 
   return runtimeScene;
@@ -105,12 +120,33 @@ export function buildSnapshot(
     }
   }
 
-  // ── 4. Сборка снапшота ──
-  return {
+  // ── 4. Справочник персонажей (для тултипов в плеере) ──
+  const characters: Record<string, { description: string; displayName?: string; age?: number }> = {};
+  for (const [name, char] of scenario.characters) {
+    const entry: { description: string; displayName?: string; age?: number } = {
+      description: char.description,
+    };
+    if (char.displayName !== undefined) {
+      entry.displayName = char.displayName;
+    }
+    if (char.age !== undefined) {
+      entry.age = char.age;
+    }
+    characters[name] = entry;
+  }
+
+  // ── 5. Сборка снапшота ──
+  const snapshot: RuntimeSnapshot = {
     version,
     publishedAt: new Date().toISOString(),
     initialState,
     startSceneId: scenario.startSceneId,
     scenes,
   };
+
+  if (Object.keys(characters).length > 0) {
+    snapshot.characters = characters;
+  }
+
+  return snapshot;
 }

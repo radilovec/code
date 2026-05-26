@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   HostListener,
   effect,
@@ -12,6 +13,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, EMPTY, switchMap, tap, debounceTime } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import { FormsModule } from '@angular/forms';
 import { EditorApiService, ProjectDetail } from './editor.api';
 import { MonacoHostComponent } from './dsl/monaco-host.component';
 import { GraphViewComponent } from './graph/graph-view.component';
@@ -19,6 +21,7 @@ import { EditorStore } from './editor.store';
 import { ScenePropsComponent } from './scene-props/scene-props.component';
 import { PublishDialogComponent } from './publish/publish-dialog.component';
 import type { LayoutData } from './graph/dagre-layout';
+import type { Character } from '@interactive-video/shared';
 
 export type EditorTab = 'dsl' | 'graph' | 'split';
 
@@ -26,7 +29,7 @@ export type EditorTab = 'dsl' | 'graph' | 'split';
   selector: 'app-editor-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MonacoHostComponent, GraphViewComponent, ScenePropsComponent],
+  imports: [RouterLink, FormsModule, MonacoHostComponent, GraphViewComponent, ScenePropsComponent],
   providers: [EditorStore],
   templateUrl: './editor.page.html',
   styleUrl: './editor.page.scss',
@@ -51,6 +54,31 @@ export class EditorPageComponent {
   readonly scenesOpen = signal(true);
   readonly variablesOpen = signal(true);
   readonly charactersOpen = signal(true);
+
+  /** Search query for filtering characters in side-panel. */
+  readonly characterSearch = signal('');
+  /** Selected character name for highlighting related scenes. */
+  readonly selectedCharacterName = signal<string | null>(null);
+
+  /** Characters filtered by search query. */
+  readonly filteredCharacters = computed(() => {
+    const chars = this.store.characters();
+    const query = this.characterSearch().toLowerCase().trim();
+    if (!query) return chars;
+    return chars.filter(c =>
+      c.name.toLowerCase().includes(query) ||
+      (c.displayName?.toLowerCase().includes(query) ?? false)
+    );
+  });
+
+  /** Scene IDs mentioned by the selected character (for highlighting in side-panel). */
+  readonly highlightedSceneIds = computed(() => {
+    const name = this.selectedCharacterName();
+    if (!name) return new Set<string>();
+    const char = this.store.characters().find(c => c.name === name);
+    if (!char) return new Set<string>();
+    return new Set(char.mentionedInScenes);
+  });
 
   private readonly layoutChange$ = new Subject<LayoutData>();
 
@@ -195,6 +223,40 @@ export class EditorPageComponent {
     this.graphLayout.set(data);
     // Debounce the network save.
     this.layoutChange$.next(data);
+  }
+
+  onCharacterSearchChange(query: string): void {
+    this.characterSearch.set(query);
+  }
+
+  onCharacterClick(char: Character): void {
+    const current = this.selectedCharacterName();
+    if (current === char.name) {
+      // Toggle off
+      this.selectedCharacterName.set(null);
+    } else {
+      this.selectedCharacterName.set(char.name);
+    }
+  }
+
+  /** Navigate to a character's definition in the DSL. */
+  goToCharacterInDsl(charName: string): void {
+    // Characters don't have a line number in the domain model,
+    // so we search the DSL text for the character declaration.
+    const dsl = this.store.dslText();
+    const pattern = new RegExp(`^\\s*character\\s+${charName}\\s*\\{`, 'm');
+    const match = pattern.exec(dsl);
+    if (match) {
+      const lineNumber = dsl.substring(0, match.index).split('\n').length;
+      this.activeTab.set('dsl');
+      setTimeout(() => {
+        const host = this.monacoHost();
+        if (host) {
+          host.getEditor()?.layout();
+          host.revealLine(lineNumber);
+        }
+      }, 0);
+    }
   }
 
   onCloseSceneProps(): void {

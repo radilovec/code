@@ -21,7 +21,7 @@ export function registerStoryDsl(): void {
     tokenizer: {
       root: [
         [/\/\/.*$/, 'comment'],
-        [/"[^"]*"/, 'string'],
+        [/"/, 'string', '@string'],
         [/\b(true|false)\b/, 'boolean'],
         [/\b\d+(\.\d+)?\b/, 'number'],
         [/->/, 'operator.arrow'],
@@ -34,6 +34,12 @@ export function registerStoryDsl(): void {
             '@default': 'identifier',
           },
         }],
+      ],
+      string: [
+        [/@[a-zA-Z_][a-zA-Z0-9_]*/, 'variable.mention'],
+        [/"/, 'string', '@pop'],
+        [/[^"@]+/, 'string'],
+        [/./, 'string'],
       ],
     },
   } as never);
@@ -48,6 +54,7 @@ export function registerStoryDsl(): void {
       { token: 'number', foreground: 'b5cea8' },
       { token: 'boolean', foreground: 'b5cea8' },
       { token: 'identifier', foreground: '9cdcfe' },
+      { token: 'variable.mention', foreground: '4ec9b0', fontStyle: 'bold' },
       { token: 'operator', foreground: 'c8c8c8' },
       { token: 'operator.arrow', foreground: 'dcdcaa' },
       { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },

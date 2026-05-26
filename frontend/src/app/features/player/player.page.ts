@@ -382,6 +382,42 @@ export class PlayerPageComponent {
     this.router.navigate(['/projects']);
   }
 
+  /**
+   * Transform scene text: replace @name with styled <span> for character mentions.
+   * If the snapshot has character data, adds a title attribute with description.
+   */
+  renderSceneText(text: string): string {
+    const snap = this.snapshot();
+    const chars = snap?.characters ?? {};
+
+    return text.replace(/@([a-zA-Z_][a-zA-Z0-9_]*)/g, (_match, name: string) => {
+      const charInfo = chars[name];
+      if (charInfo) {
+        const displayLabel = this.escapeHtml(charInfo.displayName ?? name);
+        const titleParts: string[] = [];
+        if (charInfo.description) {
+          titleParts.push(charInfo.description);
+        }
+        if (charInfo.age !== undefined) {
+          titleParts.push(`Возраст: ${charInfo.age}`);
+        }
+        const titleAttr = titleParts.length > 0
+          ? ` title="${this.escapeHtml(titleParts.join(' | '))}"` : '';
+        return `<span class="mention"${titleAttr}>${displayLabel}</span>`;
+      }
+      const escapedName = this.escapeHtml(name);
+      return `<span class="mention">${escapedName}</span>`;
+    });
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   formatSec(sec: number): string {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);

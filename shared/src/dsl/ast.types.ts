@@ -138,6 +138,8 @@ export interface TextStmt {
   content: string;
   /** Имя персонажа, произносящего реплику. Опционально. */
   characterName?: string;
+  /** Имена персонажей, упомянутых через @name в тексте. Извлекается постпроцессингом строки. */
+  mentions?: string[];
   span: Span;
 }
 
@@ -230,8 +232,12 @@ export interface SceneDecl {
  */
 export interface CharacterDecl {
   kind: 'Character';
-  /** Уникальное имя персонажа. */
+  /** Уникальное имя персонажа (identifier после "character"). */
   name: string;
+  /** Отображаемое имя из поля `name "..."` внутри блока. Опционально. */
+  displayName?: string;
+  /** Возраст из поля `age N` внутри блока. Опционально. */
+  age?: number;
   /** Текстовое описание персонажа. */
   description: string;
   span: Span;

@@ -266,7 +266,7 @@ function findGoTo(stmts: Statement[]): string | undefined {
 
 /**
  * Рекурсивно собирает имена персонажей, упомянутых в TextStmt.characterName
- * внутри тела сцены.
+ * и через inline @name (TextStmt.mentions) внутри тела сцены.
  */
 function collectCharacterMentions(stmts: Statement[]): Set<string> {
   const mentions = new Set<string>();
@@ -276,6 +276,12 @@ function collectCharacterMentions(stmts: Statement[]): Set<string> {
       case 'Text':
         if (stmt.characterName !== undefined) {
           mentions.add(stmt.characterName);
+        }
+        // Inline @name mentions from text content
+        if (stmt.mentions !== undefined) {
+          for (const name of stmt.mentions) {
+            mentions.add(name);
+          }
         }
         break;
       case 'If':
@@ -368,11 +374,18 @@ export function buildScenario(program: ProgramNode): Scenario {
     (d): d is CharacterDecl => d.kind === 'Character',
   );
   for (const decl of charDecls) {
-    characters.set(decl.name, {
+    const char: Character = {
       name: decl.name,
       description: decl.description,
       mentionedInScenes: [], // заполним на шаге 4
-    });
+    };
+    if (decl.displayName !== undefined) {
+      char.displayName = decl.displayName;
+    }
+    if (decl.age !== undefined) {
+      char.age = decl.age;
+    }
+    characters.set(decl.name, char);
   }
 
   // ── 3. Собрать сцены ──
